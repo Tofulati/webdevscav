@@ -1,1 +1,26 @@
+# System Files
 .DS_Store
+Thumbs.db
+
+# Node / Wrangler
+node_modules/
+.wrangler/
+dist/
+wrangler.toml
+
+# Firebase
+firebase-debug.log
+firebase.json
+.firebaserc
+*.serviceAccountKey.json
+.env
+.env.*
+
+# Local test
+__pycache__/
+*.log
+
+# OS/Editor
+.vscode/
+.idea/
+``
