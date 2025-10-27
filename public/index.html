@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Inspect Quest — Home</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <script type="module" src="js/auth.js" defer></script>
+</head>
+<body>
+  <header>
+    <h1>Inspect Quest</h1>
+    <nav>
+      <a href="game.html">Play</a>
+      <a href="tutorial.html">Tutorial</a>
+      <a href="leaderboard.html">Leaderboard</a>
+    </nav>
+  </header>
+
+  <main>
+    <section>
+      <h2>Login / Sign up</h2>
+      <form id="loginForm" aria-label="login form">
+        <label for="email">Email</label>
+        <input id="email" name="email" type="email" required placeholder="you@example.com">
+
+        <label for="password">Password</label>
+        <input id="password" name="password" type="password" required placeholder="password">
+
+        <menu>
+          <button type="submit" id="loginBtn">Sign in</button>
+          <button type="button" id="signupBtn">Create account</button>
+        </menu>
+      </form>
+      <p id="authStatus" aria-live="polite"></p>
+      <p class="blurb">For best experience: play in a modern browser with developer tools (Chrome, Firefox).</p>
+    </section>
+  </main>
+
+  <footer>
+    <small>&copy; 2025 Inspect Quest</small>
+  </footer>
+
+  <script>
+    // gentle browser check
+    const ua = navigator.userAgent;
+    if (!/(Chrome|Firefox|Edg|Safari)/i.test(ua)) {
+      const msg = 'Play this game in a modern browser with developer tools (Chrome or Firefox recommended).';
+      // visible blurb + alert
+      document.addEventListener('DOMContentLoaded', () => {
+        document.querySelector('.blurb').textContent = msg;
+      });
+      // also show native alert
+      alert(msg);
+    }
+  </script>
+</body>
+</html>

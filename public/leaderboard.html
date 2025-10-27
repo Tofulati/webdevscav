@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Inspect Quest — Leaderboard</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <script type="module" src="js/auth.js" defer></script>
+  <script type="module">
+    import { getTopScores } from './js/game.js';
+    document.addEventListener('DOMContentLoaded', async () => {
+      const container = document.createElement('section');
+      container.className = 'panel';
+      container.innerHTML = '<h2>Top Scores</h2><ol id="scoresList"></ol>';
+      document.body.appendChild(container);
+      const scores = await getTopScores();
+      const list = document.getElementById('scoresList');
+      scores.forEach(s => {
+        const li = document.createElement('li');
+        li.textContent = `${s.name || s.uid}: ${s.score}`;
+        list.appendChild(li);
+      });
+    });
+  </script>
+</head>
+<body>
+  <header>
+    <h1>Leaderboard</h1>
+  </header>
+</body>
+</html>

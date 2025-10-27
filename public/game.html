@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Inspect Quest — Play</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/overlay.css">
+  <script type="module" src="js/generatePage.js" defer></script>
+  <script type="module" src="js/game.js" defer></script>
+</head>
+<body>
+  <main>
+    <section id="modeSelect" class="panel">
+      <h2>Select Mode</h2>
+      <p>Choose how you'd like to play:</p>
+      <menu>
+        <button class="modeBtn" data-mode="single">Single Player</button>
+        <button class="modeBtn" data-mode="multi" disabled>Multiplayer (coming soon)</button>
+      </menu>
+    </section>
+
+    <section id="huntSelect" class="panel" hidden>
+      <h2>Select Hunt Type</h2>
+      <p>Choose difficulty / hunt type:</p>
+      <menu>
+        <button class="huntBtn" data-hunt="basic">Basic — one visible key (easy)</button>
+        <button class="huntBtn" data-hunt="advanced">Advanced — multiple keys (hard)</button>
+      </menu>
+    </section>
+
+    <!-- simulated page loaded into iframe -->
+    <iframe id="simulatedPage" title="Simulated Page" hidden sandbox="allow-same-origin"></iframe>
+
+    <!-- Minimal overlay: the one allowed div -->
+    <div id="overlay" class="overlay" hidden>
+      <header>
+        <h3 id="overlayTitle">Find the Hidden Keys</h3>
+        <p id="timer">Time: 00:00</p>
+      </header>
+
+      <form id="answerForm">
+        <label for="keyInput">Enter key</label>
+        <input id="keyInput" name="key" autocomplete="off" required placeholder="KEY123">
+        <menu>
+          <button type="submit">Submit</button>
+          <button type="button" id="skipBtn">Skip page</button>
+        </menu>
+      </form>
+
+      <p id="scoreDisplay">Score: 0</p>
+      <p id="status" aria-live="polite"></p>
+    </div>
+  </main>
+</body>
+</html>
