@@ -1,0 +1,39 @@
+/* ensure iframe occupies remaining space */
+iframe#simulatedPage{
+  width:100%;
+  height:70vh;
+  border:1px solid #ddd;
+  border-radius:6px;
+}
+
+/* overlay: only one div */
+.overlay{
+  position: fixed;
+  top:1rem;
+  right:1rem;
+  background:rgba(255,255,255,0.95);
+  padding:0.75rem;
+  border-radius:8px;
+  box-shadow:0 6px 18px rgba(10,20,40,0.12);
+  z-index:9999;
+  max-width:320px;
+  width:calc(30vw);
+  min-width:220px;
+}
+
+.overlay header{display:flex;justify-content:space-between;align-items:center}
+.overlay form{display:grid;gap:0.5rem;margin-top:0.5rem}
+#scoreDisplay{margin-top:0.5rem;font-weight:700}
+#status{color:var(--muted);font-size:0.9rem;margin-top:0.5rem}
+
+/* small screen overlay position */
+@media (max-width:600px){
+  .overlay{
+    left:0.75rem;
+    right:0.75rem;
+    bottom:1rem;
+    top:auto;
+    width:auto;
+  }
+  iframe#simulatedPage{height:60vh}
+}
