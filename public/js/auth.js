@@ -1,15 +1,26 @@
-import { createClient } from "@supabase/supabase-js";
+// public/js/auth.js
+// Very small guest-mode auth helper.
+// If a real auth system is added later, replace this module.
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+(function() {
+  function getOrCreateGuest() {
+    let uid = localStorage.getItem('inspector_user');
+    if (!uid) {
+      uid = 'guest:' + cryptoRandomId();
+      localStorage.setItem('inspector_user', uid);
+    }
+    return uid;
+  }
 
-async function signIn(email, password) {
-  const { user, error } = await supabase.auth.signInWithPassword({ email, password });
-  if (error) return alert(error.message);
-  localStorage.setItem("userId", user.id);
-}
+  function cryptoRandomId() {
+    // small helper for guest id
+    return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c =>
+      (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
+    );
+  }
 
-async function signUp(email, password) {
-  const { user, error } = await supabase.auth.signUp({ email, password });
-  if (error) return alert(error.message);
-  localStorage.setItem("userId", user.id);
-}
+  // expose globally for other scripts
+  window.InspectAuth = {
+    getUserId: getOrCreateGuest
+  };
+})();
