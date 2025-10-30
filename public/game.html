@@ -1,48 +1,34 @@
-<!doctype html>
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <meta charset="utf-8">
-  <title>WebDevScav — Play</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <link rel="stylesheet" href="css/styles.css">
-  <link rel="stylesheet" href="css/overlay.css">
-  <script type="module" src="js/game.js" defer></script>
-  <script type="module" src="js/api.js" defer></script>
-  <script src="js/auth.js" defer></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WebDev Scavenger Game</title>
+  <link rel="stylesheet" href="css/overlay.css" />
 </head>
 <body>
+  <header>
+    <h1>WebDev Scavenger</h1>
+    <p>Inspect the simulated page below and find hidden keys!</p>
+  </header>
+
   <main>
-    <section id="modeSelect" class="panel">
-      <h2>Mode</h2>
-      <menu>
-        <button class="modeBtn" data-mode="single">Single Player</button>
-        <button class="modeBtn" data-mode="multi" disabled>Multiplayer (soon)</button>
-      </menu>
+    <section id="game-container">
+      <iframe id="simulatedPage" sandbox="allow-scripts" title="Simulated Page"></iframe>
+
+      <div id="overlay">
+        <label for="keyInput">Enter Key:</label>
+        <input type="text" id="keyInput" placeholder="Enter your found key" />
+        <button id="submitKey">Submit</button>
+
+        <p id="feedback"></p>
+        <p id="scoreDisplay">Score: 0</p>
+
+        <button id="newPage">New Page</button>
+      </div>
     </section>
-
-    <section id="huntSelect" class="panel" hidden>
-      <h2>Hunt Type</h2>
-      <menu>
-        <button class="huntBtn" data-hunt="basic">Basic</button>
-        <button class="huntBtn" data-hunt="advanced">Advanced</button>
-      </menu>
-    </section>
-
-    <iframe id="simulatedFrame" title="Simulated Page" hidden sandbox="allow-same-origin"></iframe>
-
-    <div id="overlay" class="overlay" hidden>
-      <header><h3>Find the keys</h3><p id="timer">Time: 00:00</p></header>
-      <form id="answerForm">
-        <label for="answerInput">Enter key</label>
-        <input id="answerInput" name="answer" required autocomplete="off" placeholder="KEY-ABC123">
-        <menu>
-          <button type="submit">Submit</button>
-          <button type="button" id="skipBtn">Skip</button>
-        </menu>
-      </form>
-      <p id="scoreDisplay">Score: 0</p>
-      <p id="status" aria-live="polite"></p>
-    </div>
   </main>
+
+  <script type="module" src="js/overlay.js"></script>
 </body>
 </html>
