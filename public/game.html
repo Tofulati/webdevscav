@@ -1,34 +1,41 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>WebDev Scavenger Game</title>
-  <link rel="stylesheet" href="css/overlay.css" />
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Inspect Quest — Game</title>
+
+  <!-- make sure this path exists: public/css/overlay.css -->
+  <link rel="stylesheet" href="/css/overlay.css">
+
+  <!-- load as module so we can use top-level imports later if needed -->
+  <script type="module" src="/js/overlay.js" defer></script>
 </head>
 <body>
-  <header>
-    <h1>WebDev Scavenger</h1>
-    <p>Inspect the simulated page below and find hidden keys!</p>
-  </header>
+  <!-- The simulated page occupies the entire viewport -->
+  <iframe id="simulated-page" sandbox="allow-same-origin allow-scripts" title="Simulated Page"></iframe>
 
-  <main>
-    <section id="game-container">
-      <iframe id="simulatedPage" sandbox="allow-scripts" title="Simulated Page"></iframe>
+  <!-- Single overlay div (allowed) -->
+  <div id="overlay" aria-live="polite" role="dialog" aria-label="Game overlay">
+    <div id="overlay-top">
+      <div id="timer" aria-hidden="false">Time: 60s</div>
+      <button id="exit-btn" aria-label="Exit game">✕</button>
+    </div>
 
-      <div id="overlay">
-        <label for="keyInput">Enter Key:</label>
-        <input type="text" id="keyInput" placeholder="Enter your found key" />
-        <button id="submitKey">Submit</button>
+    <div id="overlay-center">
+      <form id="answer-form">
+        <label for="key-input" class="visually-hidden">Enter key</label>
+        <input id="key-input" name="key" placeholder="Enter key (e.g. ABC-123)" autocomplete="off" />
+        <button id="submit-key" type="submit">Submit</button>
+      </form>
 
-        <p id="feedback"></p>
-        <p id="scoreDisplay">Score: 0</p>
+      <div id="status" aria-live="polite"></div>
 
-        <button id="newPage">New Page</button>
+      <div id="controls">
+        <button id="skip-btn" type="button">New Page</button>
+        <div id="score">Score: <span id="score-value">0</span></div>
       </div>
-    </section>
-  </main>
-
-  <script type="module" src="js/overlay.js"></script>
+    </div>
+  </div>
 </body>
 </html>

@@ -1,37 +1,53 @@
+// overlay.js – updated with game over + quit confirm + key tracking
+
+const GAME_DURATION = 60; // seconds
 let currentPageId = null;
 let score = 0;
+let timeLeft = GAME_DURATION;
+let timerInterval = null;
+let foundKeys = new Set();
+let totalKeys = 0;
 
-const iframe = document.getElementById("simulatedPage");
-const keyInput = document.getElementById("keyInput");
-const feedback = document.getElementById("feedback");
-const scoreDisplay = document.getElementById("scoreDisplay");
-const newPageBtn = document.getElementById("newPage");
-const submitBtn = document.getElementById("submitKey");
+let iframeEl, timerEl, exitBtn, statusEl, keyInput, submitBtn, skipBtn, scoreValueEl;
 
-// Load a new page into the iframe using a data URL
-async function loadNewPage(tag = "basic") {
+function $(id) {
+  return document.getElementById(id);
+}
+
+async function fetchAndLoadPage(tag = "basic") {
   try {
-    const res = await fetch(`/api/page?tag=${tag}`);
-    const data = await res.json();
+    const resp = await fetch(`/api/page?tag=${encodeURIComponent(tag)}`);
+    if (!resp.ok) throw new Error("failed to fetch page");
+    const data = await resp.json();
+
     currentPageId = data.pageId;
+    totalKeys = data.keys.length;
+    foundKeys.clear();
 
-    // Use data URL to safely inject HTML
-    iframe.src = 'data:text/html;charset=utf-8,' + encodeURIComponent(data.html);
+    const blob = new Blob([data.html], { type: "text/html" });
+    const url = URL.createObjectURL(blob);
+    iframeEl.src = url;
 
-    feedback.textContent = `New page loaded! ${data.keys} key(s) hidden.`;
-    feedback.style.color = "black";
+    setStatus(`New page loaded — ${totalKeys} hidden keys`, "neutral");
+    keyInput.value = "";
+    keyInput.focus();
   } catch (err) {
-    feedback.textContent = "Error loading new page.";
-    feedback.style.color = "red";
     console.error(err);
+    setStatus("Failed to load page", "error");
   }
 }
 
-// Check the entered key
-async function checkKey() {
-  const key = keyInput.value.trim();
-  if (!key || !currentPageId) return;
+function setStatus(msg, type = "neutral") {
+  statusEl.textContent = msg;
+  statusEl.style.color =
+    type === "error" ? "#ff8080" : type === "success" ? "#a8ffb0" : "#fff";
+}
 
+async function checkKeyAndScore(key) {
+  if (!currentPageId) {
+    setStatus("No page loaded", "error");
+    return;
+  }
   try {
     const res = await fetch("/api/checkKey", {
       method: "POST",
@@ -41,28 +57,124 @@ async function checkKey() {
     const data = await res.json();
 
     if (data.valid) {
-      feedback.textContent = `✅ Correct! Found in ${data.matchedIn}.`;
-      feedback.style.color = "green";
-      score += 10;
-      scoreDisplay.textContent = `Score: ${score}`;
-      keyInput.value = "";
+      if (!foundKeys.has(key)) {
+        foundKeys.add(key);
+        score += 10;
+        scoreValueEl.textContent = String(score);
+        setStatus(`✅ Found (${foundKeys.size}/${totalKeys})`, "success");
+      } else {
+        setStatus("⚠️ Already found this key", "neutral");
+      }
     } else {
-      feedback.textContent = "❌ Not found. Try again.";
-      feedback.style.color = "red";
+      setStatus("❌ Not found", "error");
+    }
+
+    // Auto-end if all keys found
+    if (foundKeys.size === totalKeys) {
+      clearInterval(timerInterval);
+      showGameOver();
     }
   } catch (err) {
     console.error(err);
-    feedback.textContent = "Error checking key.";
-    feedback.style.color = "red";
+    setStatus("Validation failed", "error");
   }
 }
 
-// Event listeners
-submitBtn.addEventListener("click", checkKey);
-newPageBtn.addEventListener("click", () => loadNewPage("basic"));
-keyInput.addEventListener("keydown", (e) => {
-  if (e.key === "Enter") checkKey();
-});
+function startTimer(duration) {
+  clearInterval(timerInterval);
+  timeLeft = duration;
+  timerEl.textContent = `Time: ${timeLeft}s`;
+  timerInterval = setInterval(() => {
+    timeLeft--;
+    timerEl.textContent = `Time: ${timeLeft}s`;
+    if (timeLeft <= 0) {
+      clearInterval(timerInterval);
+      showGameOver();
+    }
+  }, 1000);
+}
 
-// Load the first page automatically
-loadNewPage();
+function showGameOver() {
+  const overlay = document.createElement("div");
+  overlay.className = "modal-backdrop";
+  overlay.innerHTML = `
+    <div class="modal">
+      <h2>⏱️ Game Over</h2>
+      <p>Final Score: <strong>${score}</strong></p>
+      <p>Keys Found: ${foundKeys.size} / ${totalKeys}</p>
+      <div class="modal-buttons">
+        <button id="play-again">Play Again</button>
+        <button id="exit-game">Exit</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+
+  document.getElementById("play-again").onclick = () => {
+    overlay.remove();
+    score = 0;
+    scoreValueEl.textContent = "0";
+    startTimer(GAME_DURATION);
+    fetchAndLoadPage();
+  };
+
+  document.getElementById("exit-game").onclick = () => {
+    window.location.href = "/";
+  };
+}
+
+function showQuitConfirm() {
+  const overlay = document.createElement("div");
+  overlay.className = "modal-backdrop";
+  overlay.innerHTML = `
+    <div class="modal">
+      <h2>Quit Game?</h2>
+      <p>Your progress will be lost.</p>
+      <div class="modal-buttons">
+        <button id="cancel-quit">Cancel</button>
+        <button id="confirm-quit">Exit</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+
+  document.getElementById("cancel-quit").onclick = () => overlay.remove();
+  document.getElementById("confirm-quit").onclick = () => {
+    overlay.remove();
+    window.location.href = "/";
+  };
+}
+
+function setupUi() {
+  iframeEl = $("simulated-page");
+  timerEl = $("timer");
+  exitBtn = $("exit-btn");
+  statusEl = $("status");
+  keyInput = $("key-input");
+  submitBtn = $("submit-key");
+  skipBtn = $("skip-btn");
+  scoreValueEl = $("score-value");
+
+  exitBtn.addEventListener("click", showQuitConfirm);
+
+  const onSubmit = async (e) => {
+    if (e) e.preventDefault();
+    const val = keyInput.value.trim();
+    if (!val) return;
+    await checkKeyAndScore(val);
+    keyInput.value = "";
+  };
+
+  submitBtn.addEventListener("click", onSubmit);
+  keyInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") onSubmit(e);
+  });
+
+  skipBtn.addEventListener("click", () => fetchAndLoadPage());
+}
+
+window.addEventListener("DOMContentLoaded", async () => {
+  setupUi();
+  startTimer(GAME_DURATION);
+  await fetchAndLoadPage("basic");
+});

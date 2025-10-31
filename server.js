@@ -206,16 +206,40 @@ async function getLeaderboard(limit = 20) {
 
 /* ---------------------- Routes ---------------------- */
 
-app.get("/api/page", async (req, res) => {
-  const tag = req.query.tag === "advanced" ? "advanced" : "basic";
-  try {
-    const pageObj = generateSimulatedPage(tag);
-    await storePage(pageObj);
-    return res.json({ pageId: pageObj.id, html: pageObj.html, keys: pageObj.keys.length });
-  } catch (err) {
-    console.error("GET /api/page error", err);
-    return res.status(500).json({ error: "internal" });
-  }
+app.get('/api/page', (req, res) => {
+  const pageId = nanoid();
+
+  // Example pool of fake page templates
+  const templates = [
+    (keys) => `
+      <html><body style="font-family:sans-serif">
+        <h1>My Personal Blog</h1>
+        <p>Welcome to my fake blog about web security and hidden codes.</p>
+        <footer>Contact me at ${keys[0]}@example.com</footer>
+        <script>console.log("Hint: ${keys[1]} might be interesting...")</script>
+        <style>body::after { content: '${keys[2]}'; display:none }</style>
+      </body></html>
+    `,
+    (keys) => `
+      <html><body>
+        <h2>Fake Shop</h2>
+        <p>Today's deals are 🔥. Hidden coupon: ${keys[0]}</p>
+        <div style="display:none">Backup key: ${keys[1]}</div>
+        <script>console.log("Hidden bonus key: ${keys[2]}")</script>
+      </body></html>
+    `,
+  ];
+
+  const template = templates[Math.floor(Math.random() * templates.length)];
+
+  // Generate 3–5 random keys
+  const keys = Array.from({ length: 3 + Math.floor(Math.random() * 3) }, () =>
+    Math.random().toString(36).substring(2, 8).toUpperCase()
+  );
+
+  const html = template(keys);
+
+  res.json({ pageId, html, keys });
 });
 
 app.post("/api/checkKey", async (req, res) => {
