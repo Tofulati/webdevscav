@@ -34,9 +34,9 @@ export default function GamePage() {
       score: game.state.score,
       keysFound: game.state.keysFound,
       totalKeys: game.state.totalKeys,
-      timeUsed: game.state.timeLimit - game.state.timeRemaining,
+      timeUsed: game.state.timeElapsed,
       difficulty: game.state.difficulty,
-      mode: playerMode,
+      mode: game.state.mode,
       theme: game.state.theme,
     });
     setSubmitted(true);

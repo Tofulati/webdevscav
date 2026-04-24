@@ -5,15 +5,16 @@ import type { LeaderboardEntry } from '../types';
 export default function Leaderboards() {
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [period, setPeriod] = useState('all');
+  const [mode, setMode] = useState<'fastest' | 'endless'>('fastest');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     setLoading(true);
-    getLeaderboard(period === 'all' ? undefined : period)
+    getLeaderboard(period === 'all' ? undefined : period, 50, mode)
       .then(setEntries)
       .catch(() => setEntries([]))
       .finally(() => setLoading(false));
-  }, [period]);
+  }, [period, mode]);
 
   return (
     <div className="container" style={{ paddingTop: '80px', paddingBottom: '120px' }}>
@@ -23,10 +24,37 @@ export default function Leaderboards() {
         <p className="subtitle">High-performance audit sessions tracked across the network.</p>
 
         <div className="lb-filters">
-          {['all', 'today', 'week'].map(p => (
-            <button key={p} className={`lb-filter ${period === p ? 'active' : ''}`} onClick={() => setPeriod(p)}>
-              {p.toUpperCase()}
-            </button>
+          {['all', 'today', 'week'].map((p, idx) => (
+            <div key={p} style={{ display: 'inline-flex', alignItems: 'center' }}>
+              <button className={`lb-filter ${period === p ? 'active' : ''}`} onClick={() => setPeriod(p)}>
+                {p.toUpperCase()}
+              </button>
+              {idx < 2 && (
+                <span
+                  style={{ margin: '0 8px', color: 'var(--text-dim)', fontFamily: 'var(--font-mono)', fontSize: '11px' }}
+                  aria-hidden="true"
+                >
+                  |
+                </span>
+              )}
+            </div>
+          ))}
+        </div>
+        <div className="lb-filters" style={{ marginTop: '8px' }}>
+          {(['fastest', 'endless'] as const).map((m, idx) => (
+            <div key={m} style={{ display: 'inline-flex', alignItems: 'center' }}>
+              <button className={`lb-filter ${mode === m ? 'active' : ''}`} onClick={() => setMode(m)}>
+                {m === 'fastest' ? 'FASTEST_TIME' : 'MAX_EXTRACTION'}
+              </button>
+              {idx < 1 && (
+                <span
+                  style={{ margin: '0 8px', color: 'var(--text-dim)', fontFamily: 'var(--font-mono)', fontSize: '11px' }}
+                  aria-hidden="true"
+                >
+                  |
+                </span>
+              )}
+            </div>
           ))}
         </div>
 

@@ -6,3 +6,4 @@ export declare function getFoundKeys(sessionId: string): Promise<Set<string>>;
 export declare function addLeaderboardEntry(entry: LeaderboardEntry): Promise<void>;
 export declare function getLeaderboard(limit?: number, period?: string, mode?: string): Promise<LeaderboardEntry[]>;
 export declare function deleteSession(sessionId: string): Promise<void>;
+export declare function isFirestoreEnabled(): boolean;

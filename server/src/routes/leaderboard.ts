@@ -10,7 +10,8 @@ const router = Router();
 router.get('/', async (req: Request, res: Response) => {
   const limit = parseInt(req.query.limit as string) || 50;
   const period = req.query.period as string | undefined;
-  const entries = await getLeaderboard(limit, period);
+  const mode = req.query.mode as string | undefined;
+  const entries = await getLeaderboard(limit, period, mode);
   res.json(entries);
 });
 
@@ -21,6 +22,7 @@ router.get('/', async (req: Request, res: Response) => {
 router.post('/', async (req: Request, res: Response) => {
   try {
     const { playerName, playerId, score, keysFound, totalKeys, timeUsed, difficulty, mode, theme } = req.body;
+    const leaderboardMode = mode === 'endless' ? 'endless' : 'fastest';
 
     if (!playerName || score === undefined) {
       res.status(400).json({ error: 'Missing required fields' });
@@ -35,7 +37,7 @@ router.post('/', async (req: Request, res: Response) => {
       totalKeys,
       timeUsed,
       difficulty,
-      mode: mode || 'solo',
+      mode: leaderboardMode,
       theme: theme || 'unknown',
       createdAt: Date.now(),
     });

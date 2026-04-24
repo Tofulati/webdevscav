@@ -30,9 +30,10 @@ export async function getHint(sessionId: string, taskId: string) {
   return res.json();
 }
 
-export async function getLeaderboard(period?: string, limit: number = 50) {
+export async function getLeaderboard(period?: string, limit: number = 50, mode?: 'fastest' | 'endless') {
   const params = new URLSearchParams();
   if (period) params.set('period', period);
+  if (mode) params.set('mode', mode);
   params.set('limit', limit.toString());
   const res = await fetch(`${API_BASE}/leaderboard?${params}`);
   if (!res.ok) throw new Error('Failed to fetch leaderboard');

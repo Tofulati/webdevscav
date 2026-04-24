@@ -2,20 +2,49 @@ import admin from 'firebase-admin';
 import type { GameSession, LeaderboardEntry } from '../types/index.js';
 
 let db: admin.firestore.Firestore | null = null;
+let firestoreReady = false;
+
+function getFirebaseCredential(): admin.credential.Credential {
+  const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
+  const serviceAccountBase64 = process.env.FIREBASE_SERVICE_ACCOUNT_KEY_BASE64;
+
+  if (serviceAccountJson) {
+    return admin.credential.cert(JSON.parse(serviceAccountJson));
+  }
+
+  if (serviceAccountBase64) {
+    const decoded = Buffer.from(serviceAccountBase64, 'base64').toString('utf-8');
+    return admin.credential.cert(JSON.parse(decoded));
+  }
+
+  const projectId = process.env.FIREBASE_PROJECT_ID;
+  const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
+  const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n');
+
+  if (projectId && clientEmail && privateKey) {
+    return admin.credential.cert({
+      projectId,
+      clientEmail,
+      privateKey,
+    });
+  }
+
+  return admin.credential.applicationDefault();
+}
 
 try {
   // Try to initialize Firebase if credentials are provided
   if (process.env.FIREBASE_PROJECT_ID) {
-    const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
-    const credential = serviceAccountJson
-      ? admin.credential.cert(JSON.parse(serviceAccountJson))
-      : admin.credential.applicationDefault();
+    const credential = getFirebaseCredential();
 
-    admin.initializeApp({
-      credential,
-      projectId: process.env.FIREBASE_PROJECT_ID,
-    });
+    if (!admin.apps.length) {
+      admin.initializeApp({
+        credential,
+        projectId: process.env.FIREBASE_PROJECT_ID,
+      });
+    }
     db = admin.firestore();
+    firestoreReady = true;
     console.log('[Firestore] Firebase Admin initialized successfully.');
   } else {
     console.log('[Firestore] No Firebase credentials found. Using in-memory fallback.');
@@ -156,4 +185,8 @@ export async function deleteSession(sessionId: string): Promise<void> {
     sessions.delete(sessionId);
     foundKeysMap.delete(sessionId);
   }
+}
+
+export function isFirestoreEnabled(): boolean {
+  return firestoreReady;
 }

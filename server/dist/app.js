@@ -1,6 +1,7 @@
 import express from 'express';
 import gameRoutes from './routes/game.js';
 import leaderboardRoutes from './routes/leaderboard.js';
+import { isFirestoreEnabled } from './services/firestore.js';
 export function createApp() {
     const app = express();
     const allowedOrigin = process.env.CORS_ORIGIN;
@@ -33,7 +34,11 @@ export function createApp() {
     app.use('/api/game', gameRoutes);
     app.use('/api/leaderboard', leaderboardRoutes);
     app.get('/api/health', (_req, res) => {
-        res.json({ status: 'ok', timestamp: Date.now() });
+        res.json({
+            status: 'ok',
+            timestamp: Date.now(),
+            storage: isFirestoreEnabled() ? 'firestore' : 'memory',
+        });
     });
     return app;
 }
