@@ -1,25 +1,64 @@
-# System Files
+# -----------------------------
+# Node / Frontend
+# -----------------------------
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Build outputs
+build/
+*.tsbuildinfo
+
+# Vite-specific
+.vite/
+
+# -----------------------------
+# Environment variables
+# -----------------------------
+.env
+.env.*
+!.env.example
+
+# -----------------------------
+# Logs
+# -----------------------------
+logs/
+*.log
+
+# -----------------------------
+# OS / Editor files
+# -----------------------------
 .DS_Store
 Thumbs.db
 
-# Node / Wrangler
-node_modules/
-.wrangler/
-dist/
-wrangler.toml
-
-# Firebase
-firebase-debug.log
-firebase.json
-.firebaserc
-*.serviceAccountKey.json
-.env
-.env.*
-
-# Local test
-__pycache__/
-*.log
-
-# OS/Editor
+# VSCode / JetBrains
 .vscode/
 .idea/
+*.swp
+*.swo
+
+# -----------------------------
+# Cache / temp
+# -----------------------------
+.cache/
+.tmp/
+temp/
+*.cache
+
+# -----------------------------
+# Misc
+# -----------------------------
+coverage/
+*.pid
+*.seed
+*.out
+
+# -----------------------------
+# Ignore local config overrides
+# -----------------------------
+*.local
+.agents
+.impeccable.md
+skills-lock.json
