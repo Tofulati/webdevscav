@@ -6,7 +6,7 @@ export interface HiddenKey {
 }
 
 export interface GameStartResponse {
-  sessionId: string;
+  gameId: string;
   html: string;
   totalKeys: number;
   timeLimit: number;
@@ -82,7 +82,7 @@ export interface StorageData {
 
 export interface GameState {
   status: 'idle' | 'loading' | 'playing' | 'completed';
-  sessionId: string | null;
+  gameId: string | null;
   html: string | null;
   totalKeys: number;
   keysFound: number;

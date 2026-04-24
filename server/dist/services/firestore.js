@@ -118,37 +118,50 @@ export async function addLeaderboardEntry(entry) {
         });
     }
 }
-export async function getLeaderboard(limit = 50, period, mode) {
+export async function getLeaderboard(limit = 50, period, mode, difficulty) {
     if (db) {
-        let query = db.collection('leaderboard');
-        if (mode) {
-            query = query.where('mode', '==', mode);
-        }
+        // Avoid composite-index requirements by doing filtering/sorting in memory.
+        const snapshot = await db.collection('leaderboard').limit(500).get();
+        const rawEntries = snapshot.docs.map((doc) => {
+            const data = doc.data();
+            const createdAt = typeof data.createdAt === 'number'
+                ? data.createdAt
+                : data.createdAt?.toMillis
+                    ? data.createdAt.toMillis()
+                    : Date.now();
+            return {
+                id: doc.id,
+                ...data,
+                createdAt,
+            };
+        });
+        let filtered = rawEntries;
+        if (mode)
+            filtered = filtered.filter((e) => e.mode === mode);
+        if (difficulty)
+            filtered = filtered.filter((e) => e.difficulty === difficulty);
         if (period === 'today') {
             const today = new Date();
             today.setHours(0, 0, 0, 0);
-            query = query.where('createdAt', '>=', admin.firestore.Timestamp.fromDate(today));
+            filtered = filtered.filter((e) => e.createdAt >= today.getTime());
         }
         else if (period === 'week') {
-            const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-            query = query.where('createdAt', '>=', admin.firestore.Timestamp.fromDate(weekAgo));
+            const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+            filtered = filtered.filter((e) => e.createdAt >= weekAgo);
         }
-        // Default sort by score. If mode is fastest, we should ideally sort ASC, but Firestore requires a composite index for where + order by.
-        // To keep it simple, we'll sort DESC by default and let the client handle it if mixed modes are returned.
-        query = query.orderBy('score', mode === 'fastest' ? 'asc' : 'desc').limit(limit);
-        const snapshot = await query.get();
-        return snapshot.docs.map(doc => {
-            const data = doc.data();
-            return {
-                ...data,
-                createdAt: data.createdAt?.toMillis ? data.createdAt.toMillis() : data.createdAt
-            };
+        filtered.sort((a, b) => {
+            if (a.mode === 'fastest' && b.mode === 'fastest')
+                return a.score - b.score;
+            return b.score - a.score;
         });
+        return filtered.slice(0, limit);
     }
     else {
         let filtered = [...leaderboard];
         if (mode)
             filtered = filtered.filter(e => e.mode === mode);
+        if (difficulty)
+            filtered = filtered.filter(e => e.difficulty === difficulty);
         if (period === 'today') {
             const today = new Date();
             today.setHours(0, 0, 0, 0);

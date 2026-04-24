@@ -3,7 +3,7 @@ import { startGame, validateKey, getHint } from '../lib/api';
 import type { GameState, ValidateResponse } from '../types';
 
 const INITIAL_STATE: GameState = {
-  status: 'idle', sessionId: null, html: null,
+  status: 'idle', gameId: null, html: null,
   totalKeys: 0, keysFound: 0, score: 0,
   timeLimit: 180, timeRemaining: 180, timeElapsed: 0,
   theme: '', difficulty: 'medium', mode: 'fastest',
@@ -53,7 +53,7 @@ export function useGame() {
     try {
       const data = await startGame(difficulty, mode);
       setState({
-        status: 'playing', sessionId: data.sessionId, html: data.html,
+        status: 'playing', gameId: data.gameId, html: data.html,
         totalKeys: data.totalKeys, keysFound: 0, score: 0,
         timeLimit: data.timeLimit, timeRemaining: data.timeLimit, timeElapsed: 0,
         theme: data.theme, difficulty, mode: data.mode,
@@ -67,9 +67,9 @@ export function useGame() {
   }, [showToast]);
 
   const submitKey = useCallback(async (value: string): Promise<ValidateResponse | null> => {
-    if (!state.sessionId || !value.trim()) return null;
+    if (!state.gameId || !value.trim()) return null;
     try {
-      const result: ValidateResponse = await validateKey(state.sessionId, value);
+      const result: ValidateResponse = await validateKey(state.gameId, value);
       if (result.correct && !result.alreadyFound) {
         setState(prev => {
           const newKeysFound = result.keysFound;
@@ -97,12 +97,12 @@ export function useGame() {
       showToast('Validation error', 'error');
       return null;
     }
-  }, [state.sessionId, state.mode, state.timeElapsed, showToast]);
+  }, [state.gameId, state.mode, state.timeElapsed, showToast]);
 
   const requestHint = useCallback(async (taskId: string) => {
-    if (!state.sessionId) return null;
+    if (!state.gameId) return null;
     try {
-      const hint = await getHint(state.sessionId, taskId);
+      const hint = await getHint(state.gameId, taskId);
       setState(prev => ({
         ...prev,
         hintsUsed: prev.hintsUsed + 1,
@@ -114,7 +114,7 @@ export function useGame() {
       showToast('Failed to get hint', 'error');
       return null;
     }
-  }, [state.sessionId, showToast]);
+  }, [state.gameId, showToast]);
 
   const reset = useCallback(() => {
     if (timerRef.current) clearInterval(timerRef.current);

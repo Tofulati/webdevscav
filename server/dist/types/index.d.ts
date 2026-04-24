@@ -18,7 +18,7 @@ export interface GameSession {
     createdAt: number;
 }
 export interface GameStartResponse {
-    sessionId: string;
+    gameId: string;
     html: string;
     totalKeys: number;
     timeLimit: number;
@@ -30,7 +30,7 @@ export interface GameStartResponse {
     }[];
 }
 export interface ValidateRequest {
-    sessionId: string;
+    gameId: string;
     value: string;
 }
 export interface ValidateResponse {

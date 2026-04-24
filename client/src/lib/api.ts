@@ -10,30 +10,36 @@ export async function startGame(difficulty: string = 'medium', mode: string = 'f
   return res.json();
 }
 
-export async function validateKey(sessionId: string, value: string) {
+export async function validateKey(gameId: string, value: string) {
   const res = await fetch(`${API_BASE}/game/validate`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ sessionId, value }),
+    body: JSON.stringify({ gameId, value }),
   });
   if (!res.ok) throw new Error('Validation failed');
   return res.json();
 }
 
-export async function getHint(sessionId: string, taskId: string) {
+export async function getHint(gameId: string, taskId: string) {
   const res = await fetch(`${API_BASE}/game/hint`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ sessionId, taskId }),
+    body: JSON.stringify({ gameId, taskId }),
   });
   if (!res.ok) throw new Error('Failed to get hint');
   return res.json();
 }
 
-export async function getLeaderboard(period?: string, limit: number = 50, mode?: 'fastest' | 'endless') {
+export async function getLeaderboard(
+  period?: string,
+  limit: number = 50,
+  mode?: 'fastest' | 'endless',
+  difficulty?: 'easy' | 'medium' | 'hard'
+) {
   const params = new URLSearchParams();
   if (period) params.set('period', period);
   if (mode) params.set('mode', mode);
+  if (difficulty) params.set('difficulty', difficulty);
   params.set('limit', limit.toString());
   const res = await fetch(`${API_BASE}/leaderboard?${params}`);
   if (!res.ok) throw new Error('Failed to fetch leaderboard');
@@ -42,7 +48,7 @@ export async function getLeaderboard(period?: string, limit: number = 50, mode?:
 
 export async function submitScore(entry: {
   playerName: string;
-  playerId: string;
+  playerId?: string;
   score: number;
   keysFound: number;
   totalKeys: number;

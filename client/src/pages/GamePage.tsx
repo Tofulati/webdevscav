@@ -30,7 +30,6 @@ export default function GamePage() {
     if (!playerName.trim() || submitted) return;
     await submitScore({
       playerName: playerName.trim(),
-      playerId: 'anon_' + Math.random().toString(36).substring(2, 8),
       score: game.state.score,
       keysFound: game.state.keysFound,
       totalKeys: game.state.totalKeys,
@@ -57,7 +56,7 @@ export default function GamePage() {
     return (
       <div className="difficulty-select-container">
         <div className="difficulty-select">
-          <div className="hero-tag">SESSION_INITIALIZATION</div>
+          <div className="hero-tag">RUN_INITIALIZATION</div>
           <h2>SELECT_AUDIT_MODE</h2>
           
           <div className="mode-selection" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1px', background: 'var(--border)', border: '1px solid var(--border)', marginBottom: '40px' }}>
@@ -79,7 +78,7 @@ export default function GamePage() {
             </button>
           </div>
 
-          <h2>SELECT_SESSION_TYPE</h2>
+          <h2>SELECT_RUN_TYPE</h2>
           <p>Multiplayer is coming soon. Use single player for now.</p>
           <div className="mode-selection" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1px', background: 'var(--border)', border: '1px solid var(--border)', marginBottom: '40px' }}>
             <button
@@ -147,7 +146,7 @@ export default function GamePage() {
               disabled={!selectedDifficulty}
               style={{ width: '100%', height: '64px', justifyContent: 'center', fontSize: '16px', opacity: selectedDifficulty ? 1 : 0.3 }}
             >
-              INITIALIZE_AUDIT_SESSION
+              INITIALIZE_AUDIT_RUN
             </button>
           </div>
 
@@ -156,7 +155,7 @@ export default function GamePage() {
             <p>
               Open your browser's Developer Tools (<strong>F12</strong> or <strong>Cmd+Opt+I</strong>). 
               For the optimal experience, <strong>dock DevTools to the bottom</strong> of the window. 
-              This ensures the technical toolbar remains fully visible during the session.
+              This ensures the technical toolbar remains fully visible during the run.
               <br></br><br></br>
               <strong>This game is only available for PCs and Laptops only, as other systems are incompatible.</strong>
             </p>
@@ -197,7 +196,7 @@ export default function GamePage() {
       {showComplete && (
         <div className="game-complete-overlay">
           <div className="game-complete-card">
-            <div className="hero-tag">SESSION_TERMINATED</div>
+            <div className="hero-tag">RUN_TERMINATED</div>
             <h2>
               {game.state.mode === 'fastest' && game.state.keysFound === game.state.totalKeys
                 ? "PERFECT_EXTRACTION"
@@ -237,7 +236,7 @@ export default function GamePage() {
                   <button className="btn btn-primary" onClick={handleSubmitScore} disabled={!playerName.trim()}>
                     UPLOAD_SCORE
                   </button>
-                  <button className="btn btn-secondary" onClick={game.reset}>NEW_SESSION</button>
+                  <button className="btn btn-secondary" onClick={game.reset}>NEW_RUN</button>
                 </div>
               </>
             )}

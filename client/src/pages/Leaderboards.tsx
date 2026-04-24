@@ -6,56 +6,62 @@ export default function Leaderboards() {
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [period, setPeriod] = useState('all');
   const [mode, setMode] = useState<'fastest' | 'endless'>('fastest');
+  const [difficulty, setDifficulty] = useState<'all' | 'easy' | 'medium' | 'hard'>('all');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     setLoading(true);
-    getLeaderboard(period === 'all' ? undefined : period, 50, mode)
+    getLeaderboard(
+      period === 'all' ? undefined : period,
+      50,
+      mode,
+      difficulty === 'all' ? undefined : difficulty
+    )
       .then(setEntries)
       .catch(() => setEntries([]))
       .finally(() => setLoading(false));
-  }, [period, mode]);
+  }, [period, mode, difficulty]);
 
   return (
     <div className="container" style={{ paddingTop: '80px', paddingBottom: '120px' }}>
       <div className="leaderboard-page">
         <div className="hero-tag">GLOBAL_METRICS :: V2.1.0</div>
         <h1>AUDIT_LEADERBOARD</h1>
-        <p className="subtitle">High-performance audit sessions tracked across the network.</p>
+        <p className="subtitle">High-performance audit runs tracked across the network.</p>
 
-        <div className="lb-filters">
-          {['all', 'today', 'week'].map((p, idx) => (
-            <div key={p} style={{ display: 'inline-flex', alignItems: 'center' }}>
-              <button className={`lb-filter ${period === p ? 'active' : ''}`} onClick={() => setPeriod(p)}>
-                {p.toUpperCase()}
-              </button>
-              {idx < 2 && (
-                <span
-                  style={{ margin: '0 8px', color: 'var(--text-dim)', fontFamily: 'var(--font-mono)', fontSize: '11px' }}
-                  aria-hidden="true"
-                >
-                  |
-                </span>
-              )}
+        <div className="lb-filter-panel">
+          <div className="lb-filter-row">
+            <span className="lb-filter-label">PERIOD</span>
+            <div className="lb-filter-group">
+              {['all', 'today', 'week'].map((p) => (
+                <button key={p} className={`lb-filter ${period === p ? 'active' : ''}`} onClick={() => setPeriod(p)}>
+                  {p.toUpperCase()}
+                </button>
+              ))}
             </div>
-          ))}
-        </div>
-        <div className="lb-filters" style={{ marginTop: '8px' }}>
-          {(['fastest', 'endless'] as const).map((m, idx) => (
-            <div key={m} style={{ display: 'inline-flex', alignItems: 'center' }}>
-              <button className={`lb-filter ${mode === m ? 'active' : ''}`} onClick={() => setMode(m)}>
-                {m === 'fastest' ? 'FASTEST_TIME' : 'MAX_EXTRACTION'}
-              </button>
-              {idx < 1 && (
-                <span
-                  style={{ margin: '0 8px', color: 'var(--text-dim)', fontFamily: 'var(--font-mono)', fontSize: '11px' }}
-                  aria-hidden="true"
-                >
-                  |
-                </span>
-              )}
+          </div>
+
+          <div className="lb-filter-row">
+            <span className="lb-filter-label">MODE</span>
+            <div className="lb-filter-group">
+              {(['fastest', 'endless'] as const).map((m) => (
+                <button key={m} className={`lb-filter ${mode === m ? 'active' : ''}`} onClick={() => setMode(m)}>
+                  {m === 'fastest' ? 'FASTEST_TIME' : 'MAX_EXTRACTION'}
+                </button>
+              ))}
             </div>
-          ))}
+          </div>
+
+          <div className="lb-filter-row">
+            <span className="lb-filter-label">DIFFICULTY</span>
+            <div className="lb-filter-group">
+              {(['all', 'easy', 'medium', 'hard'] as const).map((d) => (
+                <button key={d} className={`lb-filter ${difficulty === d ? 'active' : ''}`} onClick={() => setDifficulty(d)}>
+                  {d.toUpperCase()}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
 
         {loading ? (
@@ -64,7 +70,7 @@ export default function Leaderboards() {
           </div>
         ) : entries.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '120px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)' }}>
-            <p style={{ color: 'var(--text-dim)', fontFamily: 'var(--font-mono)', fontSize: '13px' }}>NO_SESSIONS_FOUND // BE_THE_FIRST</p>
+            <p style={{ color: 'var(--text-dim)', fontFamily: 'var(--font-mono)', fontSize: '13px' }}>NO_RUNS_FOUND // BE_THE_FIRST</p>
           </div>
         ) : (
           <table className="lb-table">

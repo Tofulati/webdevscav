@@ -21,7 +21,7 @@ router.get('/dummy', (req: Request, res: Response) => {
 
 /**
  * POST /api/game/start
- * Generates a new webpage and creates a game session.
+ * Generates a new webpage and creates a game instance.
  */
 router.post('/start', async (req: Request, res: Response) => {
   try {
@@ -30,7 +30,7 @@ router.post('/start', async (req: Request, res: Response) => {
     await saveSession(session);
 
     const response: GameStartResponse = {
-      sessionId: session.id,
+      gameId: session.id,
       html: session.html,
       totalKeys: session.totalKeys,
       timeLimit: session.timeLimit,
@@ -48,19 +48,20 @@ router.post('/start', async (req: Request, res: Response) => {
 
 /**
  * POST /api/game/validate
- * Validates a submitted key value against the session.
+ * Validates a submitted key value against the current game.
  */
 router.post('/validate', async (req: Request, res: Response) => {
   try {
-    const { sessionId, value } = req.body;
-    if (!sessionId || !value) {
-      res.status(400).json({ error: 'Missing sessionId or value' });
+    const gameId = req.body.gameId || req.body.sessionId;
+    const { value } = req.body;
+    if (!gameId || !value) {
+      res.status(400).json({ error: 'Missing gameId or value' });
       return;
     }
 
-    const session = await getSession(sessionId);
+    const session = await getSession(gameId);
     if (!session) {
-      res.status(404).json({ error: 'Session not found' });
+      res.status(404).json({ error: 'Game not found' });
       return;
     }
 
@@ -69,7 +70,7 @@ router.post('/validate', async (req: Request, res: Response) => {
       (k) => k.value.toUpperCase() === trimmedValue
     );
 
-    const foundKeys = await getFoundKeys(sessionId);
+    const foundKeys = await getFoundKeys(gameId);
 
     if (!matchedKey) {
       const response: ValidateResponse = {
@@ -82,8 +83,8 @@ router.post('/validate', async (req: Request, res: Response) => {
       return;
     }
 
-    const isNew = await markKeyFound(sessionId, matchedKey.value);
-    const updatedFound = await getFoundKeys(sessionId);
+    const isNew = await markKeyFound(gameId, matchedKey.value);
+    const updatedFound = await getFoundKeys(gameId);
 
     const response: ValidateResponse = {
       correct: true,
@@ -107,14 +108,20 @@ router.post('/validate', async (req: Request, res: Response) => {
  */
 router.post('/hint', async (req: Request, res: Response) => {
   try {
-    const { sessionId, taskId } = req.body;
-    const session = await getSession(sessionId);
-    if (!session) {
-      res.status(404).json({ error: 'Session not found' });
+    const gameId = req.body.gameId || req.body.sessionId;
+    const { taskId } = req.body;
+    if (!gameId || !taskId) {
+      res.status(400).json({ error: 'Missing gameId or taskId' });
       return;
     }
 
-    const foundKeys = await getFoundKeys(sessionId);
+    const session = await getSession(gameId);
+    if (!session) {
+      res.status(404).json({ error: 'Game not found' });
+      return;
+    }
+
+    const foundKeys = await getFoundKeys(gameId);
     const targetKey = session.keys.find((k) => k.taskId === taskId);
 
     if (!targetKey) {
@@ -138,19 +145,19 @@ router.post('/hint', async (req: Request, res: Response) => {
 });
 
 /**
- * GET /api/game/session/:id
- * Returns session info (without answer keys).
+ * GET /api/game/state/:id
+ * Returns game info (without answer keys).
  */
-router.get('/session/:id', async (req: Request, res: Response) => {
+router.get('/state/:id', async (req: Request, res: Response) => {
   const session = await getSession(req.params.id as string);
   if (!session) {
-    res.status(404).json({ error: 'Session not found' });
+    res.status(404).json({ error: 'Game not found' });
     return;
   }
 
   const foundKeys = await getFoundKeys(session.id);
   res.json({
-    sessionId: session.id,
+    gameId: session.id,
     theme: session.theme,
     difficulty: session.difficulty,
     mode: session.mode,

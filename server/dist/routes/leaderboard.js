@@ -9,7 +9,8 @@ router.get('/', async (req, res) => {
     const limit = parseInt(req.query.limit) || 50;
     const period = req.query.period;
     const mode = req.query.mode;
-    const entries = await getLeaderboard(limit, period, mode);
+    const difficulty = req.query.difficulty;
+    const entries = await getLeaderboard(limit, period, mode, difficulty);
     res.json(entries);
 });
 /**
@@ -20,18 +21,26 @@ router.post('/', async (req, res) => {
     try {
         const { playerName, playerId, score, keysFound, totalKeys, timeUsed, difficulty, mode, theme } = req.body;
         const leaderboardMode = mode === 'endless' ? 'endless' : 'fastest';
-        if (!playerName || score === undefined) {
-            res.status(400).json({ error: 'Missing required fields' });
+        const numericTimeUsed = Number.isFinite(Number(timeUsed)) ? Number(timeUsed) : 0;
+        const numericKeysFound = Number.isFinite(Number(keysFound)) ? Number(keysFound) : 0;
+        const numericTotalKeys = Number.isFinite(Number(totalKeys)) ? Number(totalKeys) : 0;
+        const numericScore = leaderboardMode === 'fastest'
+            ? numericTimeUsed
+            : Number.isFinite(Number(score))
+                ? Number(score)
+                : numericKeysFound * 100;
+        if (!playerName) {
+            res.status(400).json({ error: 'Missing required playerName' });
             return;
         }
         await addLeaderboardEntry({
             playerName,
             playerId: playerId || 'anon_' + Math.random().toString(36).substring(2, 8),
-            score,
-            keysFound,
-            totalKeys,
-            timeUsed,
-            difficulty,
+            score: numericScore,
+            keysFound: numericKeysFound,
+            totalKeys: numericTotalKeys,
+            timeUsed: numericTimeUsed,
+            difficulty: difficulty || 'unknown',
             mode: leaderboardMode,
             theme: theme || 'unknown',
             createdAt: Date.now(),

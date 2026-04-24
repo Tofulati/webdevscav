@@ -268,17 +268,749 @@ RULES:
 - The page must be responsive and professional.`;
 }
 
+interface FallbackThemeTemplate {
+  title: string;
+  subtitle: string;
+  nav: string[];
+  ctaPrimary: string;
+  ctaSecondary: string;
+  features: Array<{ title: string; detail: string }>;
+  feedLabel: string;
+  feedItems: Array<{ title: string; detail: string; meta: string }>;
+  panelTitle: string;
+  panelRows: Array<{ label: string; value: string }>;
+  footerColumns: Array<{ title: string; links: string[] }>;
+  colors: { primary: string; accent: string; bg: string; glow: string };
+}
+
+const FALLBACK_TEMPLATES: Record<WebpageTheme, FallbackThemeTemplate> = {
+  ecommerce: {
+    title: 'TechVault — Premium Device Marketplace',
+    subtitle: 'Trusted by 18,000+ teams to source enterprise laptops, peripherals, and edge hardware with same-day procurement tracking.',
+    nav: ['Catalog', 'B2B Pricing', 'Bundles', 'Orders', 'Support'],
+    ctaPrimary: 'Shop This Week',
+    ctaSecondary: 'Compare Bundles',
+    features: [
+      { title: 'Procurement Automation', detail: 'Auto-syncs purchase approvals with finance and exports invoice-ready line items.' },
+      { title: 'Global Warehousing', detail: '92 fulfillment nodes across NA, EMEA, and APAC with SLA-backed delivery windows.' },
+      { title: 'Device Lifecycle Plans', detail: 'Track warranty, depreciation, and secure disposal for every purchased asset.' },
+    ],
+    feedLabel: 'Popular This Week',
+    feedItems: [
+      { title: 'ZenBook Pro 15 (2026)', detail: '$1,899 • 32GB RAM • 2TB SSD • RTX 5060', meta: '4.8 rating • 742 reviews' },
+      { title: 'Nimbus Dock X12', detail: '$349 • 4x USB-C • 2x HDMI • 2.5GbE', meta: 'IT-approved in 120+ orgs' },
+      { title: 'PulseNoise ANC Headset', detail: '$189 • 42h battery • Teams certified mic array', meta: 'Top seller in remote work kits' },
+    ],
+    panelTitle: 'Cart Health & Checkout Insights',
+    panelRows: [
+      { label: 'Open carts', value: '184 active sessions' },
+      { label: 'Abandon rate', value: '17.2% (down 2.3%)' },
+      { label: 'Avg order value', value: '$1,264.37' },
+      { label: 'Fastest checkout', value: '01:08 by ops@novaforge.io' },
+    ],
+    footerColumns: [
+      { title: 'Company', links: ['About', 'Careers', 'Press', 'Enterprise'] },
+      { title: 'Resources', links: ['Shipping Policy', 'Warranty', 'Tax Exempt', 'Status'] },
+      { title: 'Developers', links: ['Procurement API', 'Webhooks', 'SDKs', 'Changelog'] },
+    ],
+    colors: { primary: '#6c5ce7', accent: '#a29bfe', bg: '#0b0b14', glow: 'rgba(108,92,231,0.35)' },
+  },
+  blog: {
+    title: 'ByteLog — Engineering Stories That Ship',
+    subtitle: 'A publication for practical software architecture, postmortems, and experiments from teams building at scale.',
+    nav: ['Latest', 'Architecture', 'DX', 'AI Tooling', 'Newsletter'],
+    ctaPrimary: 'Read Today\'s Digest',
+    ctaSecondary: 'Subscribe',
+    features: [
+      { title: 'Editor Curated Series', detail: 'Multi-part deep dives with code snippets, benchmarks, and rollout checklists.' },
+      { title: 'Audience Signals', detail: 'Track saves, read-time, and completion rates for each article cohort.' },
+      { title: 'Author Studio', detail: 'Draft workflow with approvals, SEO previews, and publication calendars.' },
+    ],
+    feedLabel: 'Featured Articles',
+    feedItems: [
+      { title: 'How We Cut API p95 by 41%', detail: 'Case study on queue shaping and cache key discipline.', meta: 'By Maya Chen • Apr 19, 2026' },
+      { title: 'Designing for Failure in Event Pipelines', detail: 'A playbook for retries, idempotency, and dead-letter visibility.', meta: 'By Andre Silva • Apr 17, 2026' },
+      { title: 'CSS Architecture for Multi-Team Frontends', detail: 'Namespacing and token layering without framework lock-in.', meta: 'By Kira Olsen • Apr 12, 2026' },
+    ],
+    panelTitle: 'Engagement Panel',
+    panelRows: [
+      { label: 'Daily readers', value: '38,412' },
+      { label: 'Avg read time', value: '6m 42s' },
+      { label: 'Newsletter CTR', value: '12.8%' },
+      { label: 'Returning audience', value: '63%' },
+    ],
+    footerColumns: [
+      { title: 'Editorial', links: ['Submission Guide', 'Style Guide', 'Fact Checking', 'Contributors'] },
+      { title: 'Community', links: ['Discord', 'Open Drafts', 'Events', 'Podcast'] },
+      { title: 'Legal', links: ['Terms', 'Privacy', 'Cookie Policy', 'License'] },
+    ],
+    colors: { primary: '#00b894', accent: '#55efc4', bg: '#0d1117', glow: 'rgba(0,184,148,0.3)' },
+  },
+  portfolio: {
+    title: 'Alex Rivera — Product Engineer Portfolio',
+    subtitle: 'Building resilient web products from idea to launch with a focus on design systems, reliability, and measurable growth.',
+    nav: ['Projects', 'Case Studies', 'Stack', 'Testimonials', 'Contact'],
+    ctaPrimary: 'View Case Studies',
+    ctaSecondary: 'Book Intro Call',
+    features: [
+      { title: 'End-to-End Product Delivery', detail: 'From discovery workshops to production deployment and observability setup.' },
+      { title: 'Performance-First Builds', detail: 'Core Web Vitals optimization with measurable before/after reporting.' },
+      { title: 'Team Enablement', detail: 'Mentoring, documentation, and handoff systems that scale across squads.' },
+    ],
+    feedLabel: 'Recent Work',
+    feedItems: [
+      { title: 'Atlas Finance Rebuild', detail: 'Led migration from monolith UI to modular React platform.', meta: 'Result: +28% conversion' },
+      { title: 'HelioOps Design System', detail: 'Created token architecture adopted by 7 product teams.', meta: 'Result: -35% UI regressions' },
+      { title: 'Medline Portal Accessibility Pass', detail: 'Shipped WCAG 2.2 AA improvements in 6-week sprint.', meta: 'Result: 0 critical audit findings' },
+    ],
+    panelTitle: 'Availability & Engagement',
+    panelRows: [
+      { label: 'Current status', value: 'Accepting 1 new project' },
+      { label: 'Avg project length', value: '9-12 weeks' },
+      { label: 'Client response SLA', value: '< 12 business hours' },
+      { label: 'Timezone overlap', value: 'US/EU friendly' },
+    ],
+    footerColumns: [
+      { title: 'Work', links: ['Product Builds', 'Design Systems', 'Frontend Architecture', 'Performance Audits'] },
+      { title: 'Proof', links: ['Client Notes', 'Project Metrics', 'References', 'Resume'] },
+      { title: 'Connect', links: ['Email', 'LinkedIn', 'GitHub', 'Calendar'] },
+    ],
+    colors: { primary: '#e17055', accent: '#fab1a0', bg: '#0d0d0d', glow: 'rgba(225,112,85,0.35)' },
+  },
+  dashboard: {
+    title: 'CloudMetrics — Infrastructure Operations Suite',
+    subtitle: 'Unified observability across services, queues, and incidents with incident workflows your on-call team can actually use.',
+    nav: ['Overview', 'Services', 'Alerts', 'Incidents', 'Billing'],
+    ctaPrimary: 'Open Live Dashboard',
+    ctaSecondary: 'Export Report',
+    features: [
+      { title: 'Service Health Topology', detail: 'Dependency maps with upstream impact tracing and error budget context.' },
+      { title: 'Anomaly Detection', detail: 'Learns baseline latency and throughput to surface suspicious spikes fast.' },
+      { title: 'Runbook Triggers', detail: 'Attach remediation playbooks directly to monitor states and alert thresholds.' },
+    ],
+    feedLabel: 'Operational Events',
+    feedItems: [
+      { title: 'payments-api latency spike', detail: 'p95 rose to 910ms for 4m in us-west-2.', meta: 'Mitigated • 09:14 UTC' },
+      { title: 'worker queue backlog', detail: 'InvoiceQueue reached 12,480 pending jobs.', meta: 'Autoscaled • 08:47 UTC' },
+      { title: 'cache hit-rate recovery', detail: 'Redis cluster returned to 96.1% hit-rate.', meta: 'Stable • 08:31 UTC' },
+    ],
+    panelTitle: 'SRE Quick Controls',
+    panelRows: [
+      { label: 'Active incidents', value: '2 high • 4 medium' },
+      { label: 'SLO compliance', value: '99.93% this month' },
+      { label: 'Deploys today', value: '27 successful • 1 rolled back' },
+      { label: 'Error budget left', value: '73.4%' },
+    ],
+    footerColumns: [
+      { title: 'Operations', links: ['Runbooks', 'Escalation Matrix', 'Maintenance Windows', 'Status Page'] },
+      { title: 'Integrations', links: ['PagerDuty', 'Slack', 'Datadog', 'Grafana'] },
+      { title: 'Platform', links: ['API Tokens', 'RBAC', 'Audit Logs', 'Changelog'] },
+    ],
+    colors: { primary: '#0984e3', accent: '#74b9ff', bg: '#0a0a0f', glow: 'rgba(9,132,227,0.35)' },
+  },
+  social: {
+    title: 'LoopLine — Community Pulse Feed',
+    subtitle: 'A social platform for builders sharing launch updates, product clips, and collaboration requests in real time.',
+    nav: ['Feed', 'Creators', 'Messages', 'Trending', 'Spaces'],
+    ctaPrimary: 'Join Live Feed',
+    ctaSecondary: 'Create Post',
+    features: [
+      { title: 'Creator Reputation Graph', detail: 'Signals quality via response depth, peer endorsements, and consistency.' },
+      { title: 'Smart Moderation', detail: 'AI-assisted filtering with transparent appeal workflows for community trust.' },
+      { title: 'Live Collaboration Rooms', detail: 'Small group spaces for design critiques and sprint planning sessions.' },
+    ],
+    feedLabel: 'Trending Posts',
+    feedItems: [
+      { title: '@sami.launch', detail: 'Posted a demo of zero-config analytics for indie apps.', meta: '2.4k likes • 184 comments' },
+      { title: '@devmara', detail: 'Shared a visual bug triage workflow with Figma templates.', meta: '1.1k saves • 96 reposts' },
+      { title: '@kaylinops', detail: 'Started a thread on reducing outage MTTR in startups.', meta: 'Live discussion • 342 participants' },
+    ],
+    panelTitle: 'Creator Console',
+    panelRows: [
+      { label: 'Profile growth', value: '+1,284 followers this week' },
+      { label: 'Best posting window', value: 'Tue-Thu • 10:00-12:30' },
+      { label: 'Audience split', value: '48% devs • 27% PMs • 25% founders' },
+      { label: 'Reply velocity', value: 'Avg 6m response time' },
+    ],
+    footerColumns: [
+      { title: 'Product', links: ['Safety', 'Creator Monetization', 'Mobile Apps', 'Enterprise Communities'] },
+      { title: 'Discover', links: ['Hashtags', 'Leaderboards', 'Spotlight', 'Guides'] },
+      { title: 'Support', links: ['Help Center', 'Policies', 'Contact Trust Team', 'Accessibility'] },
+    ],
+    colors: { primary: '#fd79a8', accent: '#ffeaa7', bg: '#0f0b16', glow: 'rgba(253,121,168,0.35)' },
+  },
+  news: {
+    title: 'SignalWire News — Briefings for Tech Leaders',
+    subtitle: 'Daily reporting across infrastructure, policy, and startup markets with editorial context for executive teams.',
+    nav: ['Headlines', 'Markets', 'Policy', 'Startups', 'Investigations'],
+    ctaPrimary: 'Read Morning Brief',
+    ctaSecondary: 'Set Topic Alerts',
+    features: [
+      { title: 'Rapid Coverage Desk', detail: 'Breaking updates with source-linked timelines and correction transparency.' },
+      { title: 'Sector Analysis', detail: 'Context-rich reports on SaaS, cloud infra, and AI tooling economics.' },
+      { title: 'Regional Bureaus', detail: 'On-ground correspondents in SF, London, Singapore, and Sao Paulo.' },
+    ],
+    feedLabel: 'Top Stories',
+    feedItems: [
+      { title: 'Cloud spend growth cools to 18% YoY', detail: 'Enterprises shift spend toward optimization and reserved pricing.', meta: 'Updated 37m ago' },
+      { title: 'Open model licensing debate heats up', detail: 'Consortium proposes baseline governance language for contributors.', meta: 'By Staff • Policy Desk' },
+      { title: 'Series B activity rebounds in fintech', detail: 'Median round size climbs to $31M in Q1.', meta: 'Data Team • Markets' },
+    ],
+    panelTitle: 'Newsroom Publishing Tracker',
+    panelRows: [
+      { label: 'Articles today', value: '46 published' },
+      { label: 'Corrections issued', value: '1 minor clarification' },
+      { label: 'Subscriber growth', value: '+2.1% week over week' },
+      { label: 'Avg time-to-publish', value: '18 minutes' },
+    ],
+    footerColumns: [
+      { title: 'Newsroom', links: ['Ethics Policy', 'Corrections', 'Editorial Team', 'Syndication'] },
+      { title: 'Products', links: ['Pro Terminal', 'Mobile Alerts', 'Podcast', 'Research PDF'] },
+      { title: 'Account', links: ['Manage Subscription', 'Billing', 'Gift Access', 'Preferences'] },
+    ],
+    colors: { primary: '#ffe66d', accent: '#f1fa8c', bg: '#0d1020', glow: 'rgba(255,230,109,0.35)' },
+  },
+  restaurant: {
+    title: 'Saffron Dock — Coastal Kitchen & Bar',
+    subtitle: 'Seasonal tasting menus, local seafood sourcing, and reservation slots that update in real time for downtown diners.',
+    nav: ['Menu', 'Reservations', 'Private Dining', 'Chef Table', 'Gallery'],
+    ctaPrimary: 'Book Table',
+    ctaSecondary: 'View Tasting Menu',
+    features: [
+      { title: 'Seasonal Menu Engine', detail: 'Rotates dishes weekly based on market arrivals from partner fisheries.' },
+      { title: 'Guest Preference Profiles', detail: 'Tracks allergies and seating notes for a smoother return experience.' },
+      { title: 'Event Catering Workflow', detail: 'Proposal builder for corporate dinners and milestone celebrations.' },
+    ],
+    feedLabel: 'Chef Highlights',
+    feedItems: [
+      { title: 'Charred Octopus Tartine', detail: '$24 • fermented chili aioli • lemon ash', meta: 'Pairing: dry Riesling' },
+      { title: 'Saffron Lobster Risotto', detail: '$39 • citrus butter • fennel pollen', meta: 'Most ordered this month' },
+      { title: 'Roasted Stone Fruit Pavlova', detail: '$14 • vanilla bean cream • almond praline', meta: 'New spring dessert' },
+    ],
+    panelTitle: 'Service Operations',
+    panelRows: [
+      { label: 'Tonight reservations', value: '88 / 96 seats booked' },
+      { label: 'Walk-in wait time', value: '22-30 minutes' },
+      { label: 'Average table turn', value: '1h 18m' },
+      { label: 'Guest satisfaction', value: '4.9 / 5 from 1,203 reviews' },
+    ],
+    footerColumns: [
+      { title: 'Visit', links: ['Hours', 'Location', 'Parking', 'Accessibility'] },
+      { title: 'Dining', links: ['Main Menu', 'Wine List', 'Chef Counter', 'Gift Cards'] },
+      { title: 'Contact', links: ['Reservations Team', 'Events', 'Press', 'Careers'] },
+    ],
+    colors: { primary: '#ff7675', accent: '#fdcb6e', bg: '#140c0a', glow: 'rgba(255,118,117,0.35)' },
+  },
+  startup: {
+    title: 'NeuralFlow — Workflow Intelligence Platform',
+    subtitle: 'Automate repetitive ops work with explainable AI assistants, policy controls, and enterprise-grade audit trails.',
+    nav: ['Platform', 'Solutions', 'Pricing', 'Customers', 'Docs'],
+    ctaPrimary: 'Start Free Trial',
+    ctaSecondary: 'Watch Product Tour',
+    features: [
+      { title: 'No-Code Automation Studio', detail: 'Map triggers, approvals, and action chains in a visual orchestration canvas.' },
+      { title: 'Policy Guardrails', detail: 'Enforce redaction, retention, and compliance controls before execution.' },
+      { title: 'ROI Instrumentation', detail: 'Quantify time saved, risk reduction, and workflow completion by department.' },
+    ],
+    feedLabel: 'Customer Launches',
+    feedItems: [
+      { title: 'BrightArc Finance', detail: 'Automated monthly close checklist across accounting and FP&A.', meta: 'Saved 240 hours/quarter' },
+      { title: 'FleetSnap Logistics', detail: 'Built SLA breach escalation bot for customer ops.', meta: 'Reduced response lag by 36%' },
+      { title: 'HorizonCare Clinics', detail: 'Created HIPAA-safe intake triage assistant in 9 days.', meta: '92% staff adoption' },
+    ],
+    panelTitle: 'Growth Metrics',
+    panelRows: [
+      { label: 'Pipeline value', value: '$4.8M qualified' },
+      { label: 'Trial-to-paid', value: '31.7%' },
+      { label: 'Net revenue retention', value: '124%' },
+      { label: 'Avg implementation', value: '13 days' },
+    ],
+    footerColumns: [
+      { title: 'Why NeuralFlow', links: ['Security', 'Trust Center', 'Architecture', 'Roadmap'] },
+      { title: 'Developers', links: ['API Docs', 'SDK Starter', 'CLI', 'Templates'] },
+      { title: 'Compare', links: ['vs Zapier', 'vs Workato', 'vs In-house Build', 'Migration Guide'] },
+    ],
+    colors: { primary: '#00cec9', accent: '#81ecec', bg: '#050505', glow: 'rgba(0,206,201,0.35)' },
+  },
+  travel: {
+    title: 'Wayfare Atlas — Premium Trip Planning',
+    subtitle: 'Plan multi-city itineraries with local guides, flexible bookings, and verified reviews from frequent travelers.',
+    nav: ['Destinations', 'Flights', 'Stays', 'Experiences', 'Travel Club'],
+    ctaPrimary: 'Plan My Trip',
+    ctaSecondary: 'Explore Deals',
+    features: [
+      { title: 'Dynamic Itinerary Builder', detail: 'Combines flights, transit, and event timing into one conflict-free plan.' },
+      { title: 'Smart Fare Tracking', detail: 'Alerts on meaningful drops and predicts booking windows by route history.' },
+      { title: 'Local Partner Network', detail: 'Book vetted tours and transport with live support in 42 countries.' },
+    ],
+    feedLabel: 'Trending Destinations',
+    feedItems: [
+      { title: 'Kyoto in Autumn', detail: '7-day itinerary • boutique ryokan + heritage district walks', meta: 'From $2,340 / traveler' },
+      { title: 'Lisbon + Porto', detail: '5 days • culinary route + riverfront hotels', meta: 'From $1,480 / traveler' },
+      { title: 'Patagonia Expedition', detail: '10 days • guided hikes + glacier transfer', meta: 'Limited seats • departs May 18' },
+    ],
+    panelTitle: 'Trip Operations Board',
+    panelRows: [
+      { label: 'Bookings this week', value: '1,294 confirmed' },
+      { label: 'On-time departure rate', value: '96.7%' },
+      { label: 'Support SLA', value: 'Median response 3m 12s' },
+      { label: 'Repeat travelers', value: '54%' },
+    ],
+    footerColumns: [
+      { title: 'Explore', links: ['Destination Guides', 'Visa Tips', 'Packing Lists', 'Travel Stories'] },
+      { title: 'Book', links: ['Flights', 'Hotels', 'Tours', 'Insurance'] },
+      { title: 'Member', links: ['Rewards', 'Referral Program', 'Account', '24/7 Support'] },
+    ],
+    colors: { primary: '#00d2d3', accent: '#54a0ff', bg: '#06131a', glow: 'rgba(0,210,211,0.35)' },
+  },
+  crypto: {
+    title: 'OrbitX Exchange — Digital Asset Terminal',
+    subtitle: 'Institutional-grade trading, custody, and market intelligence for serious crypto participants.',
+    nav: ['Markets', 'Trade', 'Earn', 'Institutional', 'Security'],
+    ctaPrimary: 'Open Trading Terminal',
+    ctaSecondary: 'View Proof of Reserves',
+    features: [
+      { title: 'Low-Latency Matching', detail: 'Sub-25ms order execution across spot and perpetual order books.' },
+      { title: 'Custody Controls', detail: 'MPC wallet policies, whitelisted withdrawals, and role-based approvals.' },
+      { title: 'Risk Dashboard', detail: 'Portfolio VaR, liquidation heatmaps, and exposure alerts in one view.' },
+    ],
+    feedLabel: 'Market Movers',
+    feedItems: [
+      { title: 'BTC / USD', detail: '$83,420.11 • +2.8% 24h', meta: 'Volume $3.1B' },
+      { title: 'ETH / USD', detail: '$4,120.64 • +1.9% 24h', meta: 'Open interest up 12%' },
+      { title: 'SOL / USD', detail: '$187.08 • -0.7% 24h', meta: 'Funding neutral' },
+    ],
+    panelTitle: 'Risk & Compliance',
+    panelRows: [
+      { label: 'Margin utilization', value: '43.2%' },
+      { label: 'Liquidation buffer', value: 'Healthy across top 20 accounts' },
+      { label: 'Suspicious activity flags', value: '3 pending review' },
+      { label: 'Reserve ratio', value: '1.09x assets / liabilities' },
+    ],
+    footerColumns: [
+      { title: 'Platform', links: ['Fees', 'API Docs', 'Trading Rules', 'Status'] },
+      { title: 'Security', links: ['Bug Bounty', 'Audit Reports', 'Account Protection', 'Incident History'] },
+      { title: 'Legal', links: ['Terms', 'Risk Disclosure', 'Regional Restrictions', 'Privacy'] },
+    ],
+    colors: { primary: '#feca57', accent: '#ff9ff3', bg: '#0b0b16', glow: 'rgba(254,202,87,0.32)' },
+  },
+  gaming: {
+    title: 'ArcForge — Game Discovery Platform',
+    subtitle: 'Discover fresh releases, track competitive stats, and jump into community events across PC and console titles.',
+    nav: ['Store', 'Library', 'Esports', 'Community', 'Creators'],
+    ctaPrimary: 'Browse New Releases',
+    ctaSecondary: 'Open Friends List',
+    features: [
+      { title: 'Personalized Recommendations', detail: 'Suggests games from play history, genre preference, and session length.' },
+      { title: 'Live Tournament Hub', detail: 'Watch brackets, player streams, and event stats in a synced panel.' },
+      { title: 'Cross-Platform Parties', detail: 'Invite friends from PC, console, and cloud sessions in one room.' },
+    ],
+    feedLabel: 'Featured Games',
+    feedItems: [
+      { title: 'Helix Protocol', detail: 'Tactical co-op shooter • 4.7 score', meta: 'Peak players: 82,144' },
+      { title: 'Echoes of Veyra', detail: 'Narrative RPG • 60+ hour campaign', meta: 'New DLC released today' },
+      { title: 'Turbo Kart Uprising', detail: 'Arcade racer • ranked season 5 live', meta: 'Crossplay enabled' },
+    ],
+    panelTitle: 'Player Activity',
+    panelRows: [
+      { label: 'Friends online', value: '23 currently active' },
+      { label: 'Party invites', value: '4 pending' },
+      { label: 'Daily challenge streak', value: '17 days' },
+      { label: 'Matchmaking latency', value: '34ms average' },
+    ],
+    footerColumns: [
+      { title: 'Play', links: ['Download Client', 'Controller Support', 'Cloud Saves', 'Wishlist'] },
+      { title: 'Community', links: ['Forums', 'Clans', 'Guides', 'Events Calendar'] },
+      { title: 'Creator Tools', links: ['Creator Program', 'Overlay Kit', 'Asset Packs', 'Monetization'] },
+    ],
+    colors: { primary: '#6c5ce7', accent: '#00cec9', bg: '#090a15', glow: 'rgba(108,92,231,0.36)' },
+  },
+  education: {
+    title: 'SkillBridge Academy — Career Learning Paths',
+    subtitle: 'Structured online courses with mentor feedback, practical labs, and measurable progress for modern tech careers.',
+    nav: ['Courses', 'Tracks', 'Mentors', 'Certificates', 'Community'],
+    ctaPrimary: 'Start Learning',
+    ctaSecondary: 'Preview Curriculum',
+    features: [
+      { title: 'Role-Based Tracks', detail: 'Frontend, data, cloud, and product tracks aligned to hiring requirements.' },
+      { title: 'Hands-On Labs', detail: 'Browser-based exercises with guided hints and automated validation.' },
+      { title: 'Mentor Office Hours', detail: 'Weekly sessions for architecture reviews and portfolio feedback.' },
+    ],
+    feedLabel: 'Top Courses',
+    feedItems: [
+      { title: 'Modern React Systems', detail: '42 lessons • 18 hours • intermediate', meta: '94% completion satisfaction' },
+      { title: 'Cloud Fundamentals to Deployment', detail: '31 lessons • 14 labs • beginner-friendly', meta: 'Used by 47 bootcamps' },
+      { title: 'Data Storytelling for PMs', detail: '22 lessons • dashboard capstone', meta: 'Certificate included' },
+    ],
+    panelTitle: 'Learner Progress Snapshot',
+    panelRows: [
+      { label: 'Active learners', value: '26,402 this month' },
+      { label: 'Avg weekly study time', value: '4h 28m' },
+      { label: 'Certificate completion', value: '68.4%' },
+      { label: 'Mentor response SLA', value: '< 24h' },
+    ],
+    footerColumns: [
+      { title: 'Learning', links: ['Catalog', 'Learning Paths', 'Assessments', 'Scholarships'] },
+      { title: 'For Teams', links: ['Team Plans', 'Skill Reports', 'Admin Console', 'SSO'] },
+      { title: 'Support', links: ['Help Center', 'Accessibility', 'Student Success', 'Contact'] },
+    ],
+    colors: { primary: '#2ed573', accent: '#7bed9f', bg: '#08110d', glow: 'rgba(46,213,115,0.33)' },
+  },
+  realestate: {
+    title: 'NorthKey Estates — Residential Property Hub',
+    subtitle: 'Browse verified listings, compare neighborhood data, and schedule tours with local agents in minutes.',
+    nav: ['Buy', 'Rent', 'Neighborhoods', 'Agents', 'Mortgage'],
+    ctaPrimary: 'Search Listings',
+    ctaSecondary: 'Get Pre-Qualified',
+    features: [
+      { title: 'Verified Listing Pipeline', detail: 'Agent-reviewed inventory with pricing history and disclosure tracking.' },
+      { title: 'Neighborhood Intelligence', detail: 'School ratings, commute estimates, and community trend indicators.' },
+      { title: 'Tour Scheduling Assistant', detail: 'Coordinate in-person and virtual tours with one-click confirmations.' },
+    ],
+    feedLabel: 'Fresh Listings',
+    feedItems: [
+      { title: '2BR Loft — Mission District', detail: '$1,180,000 • 1,240 sqft • 2 bath', meta: 'Open house Sat 11:00 AM' },
+      { title: '4BR Home — Austin East', detail: '$742,000 • 2,860 sqft • renovated kitchen', meta: 'Listed 2 days ago' },
+      { title: 'Downtown Condo — Seattle', detail: '$689,500 • 980 sqft • skyline view', meta: 'HOA: $420 / month' },
+    ],
+    panelTitle: 'Market Activity Panel',
+    panelRows: [
+      { label: 'Avg days on market', value: '21 days' },
+      { label: 'Median sold-over-ask', value: '+3.6%' },
+      { label: 'Tour requests today', value: '312 scheduled' },
+      { label: 'Mortgage rates', value: '6.18% fixed (30y)' },
+    ],
+    footerColumns: [
+      { title: 'Services', links: ['Buyer Services', 'Seller Toolkit', 'Rentals', 'Relocation'] },
+      { title: 'Data', links: ['Market Reports', 'Price Trends', 'School Maps', 'Zoning'] },
+      { title: 'Agents', links: ['Find an Agent', 'Top Producers', 'Join Brokerage', 'Licensing'] },
+    ],
+    colors: { primary: '#1e90ff', accent: '#70a1ff', bg: '#081018', glow: 'rgba(30,144,255,0.32)' },
+  },
+  fitness: {
+    title: 'ForgeFit — Performance Coaching Platform',
+    subtitle: 'Personalized training plans, nutrition tracking, and recovery insights designed for long-term consistency.',
+    nav: ['Programs', 'Coaches', 'Nutrition', 'Progress', 'Community'],
+    ctaPrimary: 'Start Plan',
+    ctaSecondary: 'Take Fitness Quiz',
+    features: [
+      { title: 'Adaptive Training Blocks', detail: 'Program intensity adjusts based on performance and fatigue signals.' },
+      { title: 'Nutrition Protocols', detail: 'Macro guidance with grocery lists and prep timelines by goal type.' },
+      { title: 'Recovery Intelligence', detail: 'Sleep and readiness trends to prevent overtraining and injury risk.' },
+    ],
+    feedLabel: 'Member Programs',
+    feedItems: [
+      { title: 'Strength Rebuild 8-Week', detail: '4 sessions/week • barbell + bodyweight progression', meta: 'Used by 12,400 members' },
+      { title: 'Hybrid Runner Conditioning', detail: 'Mobility + tempo intervals + VO2 max sessions', meta: 'Coach-rated 4.9 / 5' },
+      { title: 'Lean Performance Nutrition', detail: 'Meal templates for cut/recomp goals', meta: 'Includes weekly check-ins' },
+    ],
+    panelTitle: 'Personal Dashboard Snapshot',
+    panelRows: [
+      { label: 'Current streak', value: '29 workout days logged' },
+      { label: 'Weekly adherence', value: '91%' },
+      { label: 'Resting HR trend', value: '-4 bpm over 30 days' },
+      { label: 'Coach feedback pending', value: '2 updates' },
+    ],
+    footerColumns: [
+      { title: 'Training', links: ['Program Library', 'Exercise Index', 'Progressive Plans', 'Benchmarks'] },
+      { title: 'Health', links: ['Recovery', 'Meal Plans', 'Supplements', 'Habit Tracker'] },
+      { title: 'Community', links: ['Challenges', 'Leaderboard', 'Success Stories', 'Support'] },
+    ],
+    colors: { primary: '#ff6b6b', accent: '#feca57', bg: '#120c0c', glow: 'rgba(255,107,107,0.34)' },
+  },
+  streaming: {
+    title: 'ScreenWave — Premium Streaming Network',
+    subtitle: 'Watch curated films, exclusive series, and live events with adaptive quality and cross-device continuation.',
+    nav: ['Home', 'Series', 'Movies', 'Live', 'My List'],
+    ctaPrimary: 'Continue Watching',
+    ctaSecondary: 'Browse New Arrivals',
+    features: [
+      { title: 'Smart Content Curation', detail: 'Combines watch history, mood tags, and completion behavior to recommend titles.' },
+      { title: 'Adaptive Playback Engine', detail: 'Optimized bitrate switching for stable quality on variable networks.' },
+      { title: 'Family Profile Controls', detail: 'Age filters, watch limits, and profile PIN controls across devices.' },
+    ],
+    feedLabel: 'Top Picks Tonight',
+    feedItems: [
+      { title: 'Silent Orbit', detail: 'Sci-fi thriller • 2 seasons • 4K HDR', meta: '98% match for your profile' },
+      { title: 'The Last Harbor', detail: 'Crime drama • New episode released', meta: 'Trending in your region' },
+      { title: 'Field Notes: Arctic Front', detail: 'Documentary • 84 minutes', meta: 'Editor\'s spotlight pick' },
+    ],
+    panelTitle: 'Playback & Account Status',
+    panelRows: [
+      { label: 'Concurrent streams', value: '3 / 4 active' },
+      { label: 'Average quality', value: '2160p on Fiber' },
+      { label: 'Downloads available', value: '17 titles offline ready' },
+      { label: 'Next billing date', value: 'May 03, 2026' },
+    ],
+    footerColumns: [
+      { title: 'Browse', links: ['Genres', 'New & Popular', 'Top 10', 'Coming Soon'] },
+      { title: 'Account', links: ['Plans', 'Devices', 'Profiles', 'Payment Methods'] },
+      { title: 'Help', links: ['Support Center', 'Playback Help', 'Parental Controls', 'Accessibility'] },
+    ],
+    colors: { primary: '#ff4757', accent: '#ff6b81', bg: '#0b0b12', glow: 'rgba(255,71,87,0.34)' },
+  },
+};
+
+type FallbackLayoutVariant =
+  | 'storefront'
+  | 'article'
+  | 'newsroom'
+  | 'video-platform'
+  | 'streaming-app'
+  | 'stock-terminal'
+  | 'listing-market'
+  | 'profile'
+  | 'saas'
+  | 'fitness';
+
+const THEME_LAYOUT_VARIANTS: Record<WebpageTheme, FallbackLayoutVariant> = {
+  ecommerce: 'storefront',
+  restaurant: 'storefront',
+  travel: 'storefront',
+  realestate: 'listing-market',
+  blog: 'article',
+  news: 'newsroom',
+  education: 'article',
+  portfolio: 'profile',
+  social: 'video-platform',
+  startup: 'saas',
+  fitness: 'fitness',
+  dashboard: 'stock-terminal',
+  crypto: 'stock-terminal',
+  gaming: 'video-platform',
+  streaming: 'streaming-app',
+};
+
+function buildLayoutStyles(variant: FallbackLayoutVariant): string {
+  const base = `
+  .site-shell { width: min(1240px, 94vw); margin: 0 auto; }
+  .top-nav { display:flex; justify-content:space-between; align-items:center; gap: 12px; padding: 14px 0; border-bottom: 1px solid var(--border); }
+  .top-nav .brand { font-weight: 800; color: var(--text); }
+  .top-nav .links { display:flex; gap: 14px; flex-wrap: wrap; color: var(--text-muted); font-size: 13px; }
+  .block { border: 1px solid var(--border); background: rgba(255,255,255,.02); border-radius: 12px; padding: 14px; }
+  `;
+
+  if (variant === 'storefront') {
+    return `${base}
+    .layout-storefront .hero { display:grid; grid-template-columns: 1.2fr .8fr; gap: 14px; margin: 16px 0; }
+    .layout-storefront .products { display:grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 12px; }
+    .layout-storefront .products img { width:100%; height:150px; object-fit:cover; border-radius: 8px; margin-bottom: 8px; }
+    .layout-storefront .cart li { display:flex; justify-content:space-between; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,.06); }
+    @media (max-width: 900px){ .layout-storefront .hero,.layout-storefront .products{grid-template-columns:1fr;} }`;
+  }
+  if (variant === 'article') {
+    return `${base}
+    .layout-article .headline { padding: 20px 0 14px; border-bottom: 1px solid var(--border); }
+    .layout-article .headline h1 { font-size: clamp(34px,6vw,56px); max-width: 18ch; }
+    .layout-article .main { display:grid; grid-template-columns: .7fr 1.3fr; gap: 18px; margin: 16px 0; }
+    .layout-article .story p { margin-bottom: 12px; line-height: 1.7; max-width: 68ch; }
+    .layout-article .story img { width:100%; height: 260px; object-fit: cover; border-radius: 10px; margin: 12px 0; }
+    @media (max-width: 900px){ .layout-article .main{grid-template-columns:1fr;} }`;
+  }
+  if (variant === 'newsroom') {
+    return `${base}
+    .layout-newsroom .ticker { padding: 8px 12px; background: rgba(255,255,255,.05); border-radius: 999px; margin: 12px 0; font-size: 12px; }
+    .layout-newsroom .grid { display:grid; grid-template-columns: 1.3fr .7fr; gap: 14px; margin: 10px 0 16px; }
+    .layout-newsroom .lead img { width:100%; height: 220px; object-fit:cover; border-radius: 8px; margin: 8px 0; }
+    .layout-newsroom .column article { padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,.06); }
+    @media (max-width: 900px){ .layout-newsroom .grid{grid-template-columns:1fr;} }`;
+  }
+  if (variant === 'streaming-app') {
+    return `${base}
+    .layout-streaming-app .hero { position:relative; margin: 12px 0 18px; border-radius: 14px; overflow: hidden; min-height: 320px; }
+    .layout-streaming-app .hero img { width:100%; height:320px; object-fit:cover; }
+    .layout-streaming-app .hero .overlay { position:absolute; inset:0; background: linear-gradient(90deg, rgba(0,0,0,.75), rgba(0,0,0,.2)); padding: 26px; display:flex; flex-direction:column; justify-content:flex-end; }
+    .layout-streaming-app .row { margin-bottom: 14px; }
+    .layout-streaming-app .rail { display:grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 10px; }
+    .layout-streaming-app .rail article img { width:100%; height:120px; object-fit:cover; border-radius: 8px; margin-bottom: 6px; }
+    @media (max-width: 1000px){ .layout-streaming-app .rail{grid-template-columns:1fr 1fr;} }`;
+  }
+  if (variant === 'video-platform') {
+    return `${base}
+    .layout-video-platform .main { display:grid; grid-template-columns: 1.2fr .8fr; gap: 14px; margin: 14px 0; }
+    .layout-video-platform .player { border-radius: 12px; overflow: hidden; border: 1px solid var(--border); }
+    .layout-video-platform .player img { width:100%; height: 340px; object-fit: cover; display:block; }
+    .layout-video-platform .up-next article { display:grid; grid-template-columns: 120px 1fr; gap: 10px; padding: 8px 0; border-bottom:1px solid rgba(255,255,255,.06); }
+    .layout-video-platform .up-next img { width:120px; height:72px; object-fit: cover; border-radius: 8px; }
+    @media (max-width: 980px){ .layout-video-platform .main{grid-template-columns:1fr;} }`;
+  }
+  if (variant === 'stock-terminal') {
+    return `${base}
+    .layout-stock-terminal .strip { display:grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 8px; margin: 12px 0; }
+    .layout-stock-terminal .strip article { border:1px solid var(--border); border-radius:10px; padding: 10px; background: rgba(255,255,255,.03); }
+    .layout-stock-terminal .terminal { display:grid; grid-template-columns: 1.2fr .8fr; gap: 12px; }
+    .layout-stock-terminal table { width:100%; border-collapse: collapse; font-size: 13px; }
+    .layout-stock-terminal th,.layout-stock-terminal td { border-bottom:1px solid rgba(255,255,255,.06); padding: 8px; text-align:left; }
+    .layout-stock-terminal .orders li { display:flex; justify-content:space-between; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,.06); }
+    @media (max-width: 980px){ .layout-stock-terminal .terminal,.layout-stock-terminal .strip{grid-template-columns:1fr;} }`;
+  }
+  if (variant === 'listing-market') {
+    return `${base}
+    .layout-listing-market .map-row { display:grid; grid-template-columns: .8fr 1.2fr; gap: 12px; margin: 12px 0; }
+    .layout-listing-market .map { background: url('https://picsum.photos/seed/mapgrid/640/500') center/cover; min-height: 320px; border-radius: 12px; border:1px solid var(--border); }
+    .layout-listing-market .cards article { border:1px solid var(--border); border-radius: 10px; padding: 10px; margin-bottom: 10px; background: rgba(255,255,255,.02); }
+    .layout-listing-market .cards img { width:100%; height:140px; object-fit:cover; border-radius:8px; margin-bottom:8px; }
+    @media (max-width: 900px){ .layout-listing-market .map-row{grid-template-columns:1fr;} }`;
+  }
+  if (variant === 'saas') {
+    return `${base}
+    .layout-saas .hero { display:grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 16px 0; }
+    .layout-saas .pricing { display:grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 10px; }
+    .layout-saas .pricing article { border:1px solid var(--border); border-radius: 10px; padding: 12px; background: rgba(255,255,255,.02); }
+    @media (max-width: 960px){ .layout-saas .hero,.layout-saas .pricing{grid-template-columns:1fr;} }`;
+  }
+  if (variant === 'fitness') {
+    return `${base}
+    .layout-fitness .dashboard { display:grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 10px; margin: 12px 0; }
+    .layout-fitness .dashboard article { border:1px solid var(--border); border-radius: 10px; padding: 10px; background: rgba(255,255,255,.02); }
+    .layout-fitness .plans { display:grid; grid-template-columns: 1.2fr .8fr; gap: 12px; }
+    .layout-fitness .plans article { border:1px solid var(--border); border-radius: 12px; padding: 12px; }
+    @media (max-width: 980px){ .layout-fitness .dashboard,.layout-fitness .plans{grid-template-columns:1fr;} }`;
+  }
+
+  return `${base}`;
+}
+
+function buildLayoutBody(template: FallbackThemeTemplate, variant: FallbackLayoutVariant): string {
+  const navLinks = template.nav.map((item) => `<a href="#">${item}</a>`).join('');
+  const footerColumns = template.footerColumns
+    .map((column) => `<div><h5>${column.title}</h5>${column.links.map((link) => `<a href="#">${link}</a>`).join('')}</div>`)
+    .join('\n');
+  const panelRows = template.panelRows.map((row) => `<li><strong>${row.label}</strong><span>${row.value}</span></li>`).join('');
+  const feedCards = template.feedItems
+    .map((item, index) => `<article><h4>${item.title}</h4><p>${item.detail}</p><span>${item.meta}</span>${index < template.feedItems.length - 1 ? '' : ''}</article>`)
+    .join('');
+  const featureCards = template.features.map((feature) => `<article><h4>${feature.title}</h4><p>${feature.detail}</p></article>`).join('');
+  const longFeed = Array.from({ length: 9 }, (_, i) => {
+    const item = template.feedItems[i % template.feedItems.length];
+    return `<article class="block"><h4>${item.title} #${i + 1}</h4><p>${item.detail}</p><span>${item.meta}</span></article>`;
+  }).join('');
+  const longTableRows = Array.from({ length: 14 }, (_, i) => {
+    const item = template.feedItems[i % template.feedItems.length];
+    return `<tr><td>${item.title.split(' ')[0]}-${100 + i}</td><td>${i % 2 ? 'BUY' : 'SELL'}</td><td>${item.detail}</td><td>${item.meta}</td></tr>`;
+  }).join('');
+  const longListRows = Array.from({ length: 12 }, (_, i) => {
+    const row = template.panelRows[i % template.panelRows.length];
+    return `<li><strong>${row.label}</strong><span>${row.value}</span></li>`;
+  }).join('');
+
+  if (variant === 'storefront') {
+    const cards = template.feedItems.map((item) => `<article class="block"><img src="https://picsum.photos/seed/${encodeURIComponent(item.title)}/420/280" alt="${item.title}"><h4>${item.title}</h4><p>${item.detail}</p><span>${item.meta}</span></article>`).join('');
+    return `<div class="layout-storefront site-shell">
+      <header class="top-nav"><div class="brand">${template.title.split('—')[0]}</div><div class="links">${navLinks}</div></header>
+      <section class="hero"><article class="block"><p class="section-title">Storefront</p><h1>${template.title}</h1><p>${template.subtitle}</p><a class="btn-main" href="#">${template.ctaPrimary}</a></article><aside class="block"><p class="section-title">${template.panelTitle}</p><ul class="cart">${panelRows}</ul></aside></section>
+      <section class="products">${cards}</section>
+      <section class="block" style="margin-top:12px;"><p class="section-title">Trending Collections</p><div class="products">${cards}</div></section>
+      <section class="block" style="margin-top:12px;"><p class="section-title">Recently Viewed</p><div class="products">${cards}</div></section>
+      <section class="block" style="margin-top:12px;"><p class="section-title">Customer Q&A</p><div style="display:grid; gap:10px;">${longFeed}</div></section>
+      <footer class="footer"><div class="footer-grid">${footerColumns}</div><p class="copyright">&copy; 2026 ${template.title.split('—')[0]}</p></footer>
+    </div>`;
+  }
+  if (variant === 'article') {
+    return `<div class="layout-article site-shell">
+      <header class="top-nav"><div class="brand">${template.title.split('—')[0]}</div><div class="links">${navLinks}</div></header>
+      <section class="headline"><p class="section-title">Longform Article</p><h1>${template.feedItems[0].title}</h1><p>${template.feedItems[0].meta}</p></section>
+      <section class="main"><aside class="block"><p class="section-title">Key Takeaways</p>${featureCards}</aside><article class="story block"><img src="https://picsum.photos/seed/${encodeURIComponent(template.title)}/960/540" alt="${template.title}"><p>${template.subtitle}</p><p>${template.feedItems[0].detail}</p><p>${template.feedItems[1].detail}</p><p>${template.feedItems[2].detail}</p><a href="#" class="btn-main">${template.ctaPrimary}</a></article></section>
+      <section class="block"><p class="section-title">Related Stories</p><div style="display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px;">${longFeed}</div></section>
+      <section class="block" style="margin-top:12px;"><p class="section-title">Editorial Timeline</p><div style="display:grid; gap:8px;">${longFeed}</div></section>
+      <section class="block" style="margin-top:12px;"><p class="section-title">Reader Comments</p><div style="display:grid; gap:8px;">${longFeed}</div></section>
+      <footer class="footer"><div class="footer-grid">${footerColumns}</div><p class="copyright">&copy; 2026 ${template.title.split('—')[0]}</p></footer>
+    </div>`;
+  }
+  if (variant === 'newsroom') {
+    const side = template.feedItems.map((item) => `<article><h4>${item.title}</h4><p>${item.detail}</p><span>${item.meta}</span></article>`).join('');
+    return `<div class="layout-newsroom site-shell">
+      <header class="top-nav"><div class="brand">${template.title.split('—')[0]}</div><div class="links">${navLinks}</div></header>
+      <div class="ticker">BREAKING: Infrastructure policy vote passes committee • Markets close mixed • New funding round announced</div>
+      <section class="grid"><article class="lead block"><p class="section-title">Lead Story</p><img src="https://picsum.photos/seed/${encodeURIComponent(template.feedItems[0].title)}/960/540" alt="lead"><h3>${template.feedItems[0].title}</h3><p>${template.feedItems[0].detail}</p></article><aside class="column block"><p class="section-title">Top Stories</p>${side}</aside></section>
+      <section class="block"><p class="section-title">World / Politics / Business</p><div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;">${longFeed}</div></section>
+      <section class="block" style="margin-top:12px;"><p class="section-title">Most Read in Last 24h</p><div style="display:grid; gap:8px;">${longFeed}</div></section>
+      <section class="block" style="margin-top:12px;"><p class="section-title">Live Blog Updates</p><div style="display:grid; gap:8px;">${longFeed}</div></section>
+      <footer class="footer"><div class="footer-grid">${footerColumns}</div><p class="copyright">&copy; 2026 ${template.title.split('—')[0]}</p></footer>
+    </div>`;
+  }
+  if (variant === 'streaming-app') {
+    const rail = template.feedItems.map((item) => `<article><img src="https://picsum.photos/seed/${encodeURIComponent(item.title + 'stream')}/420/240" alt="${item.title}"><h4>${item.title}</h4><span>${item.meta}</span></article>`).join('');
+    return `<div class="layout-streaming-app site-shell">
+      <header class="top-nav"><div class="brand">${template.title.split('—')[0]}</div><div class="links">${navLinks}</div></header>
+      <section class="hero"><img src="https://picsum.photos/seed/${encodeURIComponent(template.title + 'hero')}/1200/500" alt="${template.title}"><div class="overlay"><p class="section-title">Featured Tonight</p><h1>${template.feedItems[0].title}</h1><p>${template.feedItems[0].detail}</p><a class="btn-main" href="#">${template.ctaPrimary}</a></div></section>
+      <section class="row"><p class="section-title">Continue Watching</p><div class="rail">${rail}</div></section>
+      <section class="row"><p class="section-title">Trending Now</p><div class="rail">${rail}${rail}</div></section>
+      <section class="row"><p class="section-title">Because You Watched</p><div class="rail">${rail}${rail}</div></section>
+      <section class="block"><p class="section-title">Your Watchlist Activity</p><ul>${longListRows}</ul></section>
+      <footer class="footer"><div class="footer-grid">${footerColumns}</div><p class="copyright">&copy; 2026 ${template.title.split('—')[0]}</p></footer>
+    </div>`;
+  }
+  if (variant === 'video-platform') {
+    const upNext = template.feedItems.map((item) => `<article><img src="https://picsum.photos/seed/${encodeURIComponent(item.title + 'video')}/280/180" alt="${item.title}"><div><h4>${item.title}</h4><p>${item.detail}</p><span>${item.meta}</span></div></article>`).join('');
+    return `<div class="layout-video-platform site-shell">
+      <header class="top-nav"><div class="brand">${template.title.split('—')[0]}</div><div class="links">${navLinks}</div></header>
+      <section class="main"><article><div class="player"><img src="https://picsum.photos/seed/${encodeURIComponent(template.title + 'player')}/1200/680" alt="player"></div><div class="block" style="margin-top:10px;"><h3>${template.feedItems[0].title}</h3><p>${template.feedItems[0].detail}</p><span>${template.feedItems[0].meta}</span></div></article><aside class="up-next block"><p class="section-title">Up Next</p>${upNext}</aside></section>
+      <section class="block"><p class="section-title">Recommended for You</p><div style="display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px;">${upNext}${upNext}</div></section>
+      <section class="block" style="margin-top:12px;"><p class="section-title">Top Live Channels</p><div style="display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px;">${upNext}${upNext}</div></section>
+      <section class="block" style="margin-top:12px;"><p class="section-title">Community Posts</p><div style="display:grid; gap:8px;">${longFeed}</div></section>
+      <footer class="footer"><div class="footer-grid">${footerColumns}</div><p class="copyright">&copy; 2026 ${template.title.split('—')[0]}</p></footer>
+    </div>`;
+  }
+  if (variant === 'stock-terminal') {
+    const strip = template.feedItems.map((item) => `<article><strong>${item.title.split(' ')[0]}</strong><p>${item.meta}</p><span>${item.detail}</span></article>`).join('');
+    const orderRows = template.panelRows.map((item) => `<li><strong>${item.label}</strong><span>${item.value}</span></li>`).join('');
+    const tableRows = template.feedItems.map((item, idx) => `<tr><td>${item.title}</td><td>${idx % 2 ? 'BUY' : 'SELL'}</td><td>${item.detail}</td></tr>`).join('');
+    return `<div class="layout-stock-terminal site-shell">
+      <header class="top-nav"><div class="brand">${template.title.split('—')[0]} Terminal</div><div class="links">${navLinks}</div></header>
+      <section class="strip">${strip}</section>
+      <section class="terminal"><article class="block"><p class="section-title">Market Tape</p><table><thead><tr><th>Symbol</th><th>Side</th><th>Price/Info</th></tr></thead><tbody>${tableRows}</tbody></table></article><aside class="block"><p class="section-title">Order Panel</p><ul class="orders">${orderRows}</ul><a href="#" class="btn-main">${template.ctaPrimary}</a></aside></section>
+      <section class="block" style="margin-top:12px;"><p class="section-title">Level II Quotes</p><table><thead><tr><th>Symbol</th><th>Side</th><th>Price</th><th>Notes</th></tr></thead><tbody>${longTableRows}</tbody></table></section>
+      <section class="block" style="margin-top:12px;"><p class="section-title">News & Analyst Notes</p><div style="display:grid; gap:8px;">${longFeed}</div></section>
+      <section class="block" style="margin-top:12px;"><p class="section-title">Watchlists</p><ul class="orders">${longListRows}</ul></section>
+      <footer class="footer"><div class="footer-grid">${footerColumns}</div><p class="copyright">&copy; 2026 ${template.title.split('—')[0]}</p></footer>
+    </div>`;
+  }
+  if (variant === 'listing-market') {
+    const cards = template.feedItems.map((item) => `<article><img src="https://picsum.photos/seed/${encodeURIComponent(item.title + 'home')}/500/320" alt="${item.title}"><h4>${item.title}</h4><p>${item.detail}</p><span>${item.meta}</span></article>`).join('');
+    return `<div class="layout-listing-market site-shell">
+      <header class="top-nav"><div class="brand">${template.title.split('—')[0]}</div><div class="links">${navLinks}</div></header>
+      <section class="map-row"><aside class="map"></aside><div class="cards">${cards}</div></section>
+      <section class="block"><p class="section-title">${template.panelTitle}</p><ul>${panelRows}</ul></section>
+      <section class="block" style="margin-top:12px;"><p class="section-title">Nearby Listings</p><div class="cards">${cards}${cards}</div></section>
+      <section class="block" style="margin-top:12px;"><p class="section-title">Neighborhood Guides</p><div style="display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px;">${longFeed}</div></section>
+      <section class="block" style="margin-top:12px;"><p class="section-title">Recent Price Changes</p><ul>${longListRows}</ul></section>
+      <footer class="footer"><div class="footer-grid">${footerColumns}</div><p class="copyright">&copy; 2026 ${template.title.split('—')[0]}</p></footer>
+    </div>`;
+  }
+  if (variant === 'saas') {
+    const pricing = ['Starter', 'Growth', 'Enterprise'].map((tier, idx) => `<article><h4>${tier}</h4><p>${idx === 0 ? '$49' : idx === 1 ? '$149' : 'Custom'}/mo</p><span>${template.features[idx % template.features.length].detail}</span></article>`).join('');
+    return `<div class="layout-saas site-shell">
+      <header class="top-nav"><div class="brand">${template.title.split('—')[0]}</div><div class="links">${navLinks}</div></header>
+      <section class="hero"><article class="block"><p class="section-title">Platform</p><h1>${template.title}</h1><p>${template.subtitle}</p><a class="btn-main" href="#">${template.ctaPrimary}</a></article><article class="block"><p class="section-title">Why Teams Buy</p>${featureCards}</article></section>
+      <section class="pricing">${pricing}</section>
+      <section class="block" style="margin-top:12px;"><p class="section-title">Customer Stories</p><div style="display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px;">${longFeed}</div></section>
+      <section class="block" style="margin-top:12px;"><p class="section-title">Product Updates</p><table><thead><tr><th>Version</th><th>Release</th><th>Summary</th><th>Status</th></tr></thead><tbody>${longTableRows}</tbody></table></section>
+      <section class="block" style="margin-top:12px;"><p class="section-title">Security & Compliance</p><ul>${longListRows}</ul></section>
+      <footer class="footer"><div class="footer-grid">${footerColumns}</div><p class="copyright">&copy; 2026 ${template.title.split('—')[0]}</p></footer>
+    </div>`;
+  }
+  if (variant === 'fitness') {
+    const stats = template.panelRows.map((row) => `<article><strong>${row.value}</strong><p>${row.label}</p></article>`).join('');
+    return `<div class="layout-fitness site-shell">
+      <header class="top-nav"><div class="brand">${template.title.split('—')[0]}</div><div class="links">${navLinks}</div></header>
+      <section class="dashboard">${stats}</section>
+      <section class="plans"><article><p class="section-title">Today's Plan</p>${featureCards}</article><aside><p class="section-title">${template.feedLabel}</p>${feedCards}</aside></section>
+      <section class="block" style="margin-top:12px;"><p class="section-title">Class Schedule</p><table><thead><tr><th>Time</th><th>Class</th><th>Coach</th><th>Spots Left</th></tr></thead><tbody>${longTableRows}</tbody></table></section>
+      <section class="block" style="margin-top:12px;"><p class="section-title">Member Activity Feed</p><div style="display:grid; gap:8px;">${longFeed}</div></section>
+      <section class="block" style="margin-top:12px;"><p class="section-title">Nutrition & Recovery Notes</p><ul>${longListRows}</ul></section>
+      <footer class="footer"><div class="footer-grid">${footerColumns}</div><p class="copyright">&copy; 2026 ${template.title.split('—')[0]}</p></footer>
+    </div>`;
+  }
+
+  return `<div class="site-shell"><header class="top-nav"><div class="brand">${template.title}</div><div class="links">${navLinks}</div></header><section class="block"><h1>${template.title}</h1><p>${template.subtitle}</p></section><footer class="footer"><div class="footer-grid">${footerColumns}</div></footer></div>`;
+}
+
 // Fallback template when Gemini is not configured
 function generateFallbackPage(theme: WebpageTheme, keys: HiddenKey[]): string {
-  const themeColors: Record<string, { primary: string; accent: string; bg: string }> = {
-    ecommerce: { primary: '#6c5ce7', accent: '#a29bfe', bg: '#0b0b14' },
-    blog: { primary: '#00b894', accent: '#55efc4', bg: '#0d1117' },
-    portfolio: { primary: '#e17055', accent: '#fab1a0', bg: '#0d0d0d' },
-    dashboard: { primary: '#0984e3', accent: '#74b9ff', bg: '#0a0a0f' },
-    startup: { primary: '#00cec9', accent: '#81ecec', bg: '#050505' },
-  };
-
-  const colors = themeColors[theme] || themeColors.startup;
+  const template = FALLBACK_TEMPLATES[theme] || FALLBACK_TEMPLATES.startup;
+  const { colors } = template;
+  const variant = THEME_LAYOUT_VARIANTS[theme] || 'profile';
 
   let headContent = '';
   let bodyContent = '';
@@ -303,16 +1035,8 @@ function generateFallbackPage(theme: WebpageTheme, keys: HiddenKey[]): string {
       case 'aria-label': bodyContent += `<button aria-label="System: ${key.value}" style="display:none"></button>\n`; break;
     }
   });
-
-  const themeTitles: Record<string, string> = {
-    ecommerce: 'TechVault — Premium Tech Store',
-    blog: 'ByteLog — Developer Stories',
-    portfolio: 'Alex Rivera — Full Stack Developer',
-    dashboard: 'CloudMetrics — Analytics Dashboard',
-    startup: 'NeuralFlow — AI Platform',
-  };
-
-  const title = themeTitles[theme] || 'WebDevScav Audit';
+  const layoutStyles = buildLayoutStyles(variant);
+  const layoutBody = buildLayoutBody(template, variant);
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -320,16 +1044,17 @@ function generateFallbackPage(theme: WebpageTheme, keys: HiddenKey[]): string {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   ${headContent}
-  <title>${title}</title>
+  <title>${template.title}</title>
   <style>
     :root {
       --primary: ${colors.primary};
       --accent: ${colors.accent};
       --bg: ${colors.bg};
-      --surface: rgba(255,255,255,0.03);
+      --surface: rgba(255,255,255,0.04);
       --border: rgba(255,255,255,0.08);
       --text: #ffffff;
-      --text-muted: #a0a0a0;
+      --text-muted: #b6bdd6;
+      --glow: ${colors.glow};
       ${cssInjections}
     }
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -337,76 +1062,47 @@ function generateFallbackPage(theme: WebpageTheme, keys: HiddenKey[]): string {
       font-family: 'Inter', system-ui, -apple-system, sans-serif;
       background: var(--bg);
       color: var(--text);
-      line-height: 1.6;
+      line-height: 1.55;
       overflow-x: hidden;
     }
-    nav {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 24px 40px; background: rgba(0,0,0,0.4);
-      backdrop-filter: blur(12px); border-bottom: 1px solid var(--border);
-      position: sticky; top: 0; z-index: 100;
-    }
-    .logo { font-size: 20px; font-weight: 800; letter-spacing: -0.5px; color: var(--primary); }
-    .hero {
-      padding: 120px 40px 80px; text-align: center;
-      background: radial-gradient(circle at top right, rgba(108,92,231,0.1), transparent);
-    }
-    .hero h1 { font-size: 64px; font-weight: 900; letter-spacing: -2px; margin-bottom: 20px; line-height: 1.1; }
-    .hero h1 span { color: var(--primary); }
-    .hero p { font-size: 20px; color: var(--text-muted); max-width: 600px; margin: 0 auto 40px; }
+    a { color: inherit; text-decoration: none; }
+    .container { width: min(1200px, 92vw); margin: 0 auto; }
+    h1, h2, h3, h4 { letter-spacing: -0.3px; }
+    h1 { font-size: clamp(30px, 5vw, 50px); margin-bottom: 10px; line-height: 1.1; }
+    p { color: var(--text-muted); }
+    .section-title { font-size: 12px; color: var(--accent); letter-spacing: 1.1px; font-weight: 700; text-transform: uppercase; margin-bottom: 8px; }
     .btn-main {
-      display: inline-block; padding: 16px 40px; background: var(--primary);
-      color: white; border-radius: 4px; font-weight: 700; text-decoration: none;
+      display: inline-block; padding: 14px 24px; background: var(--primary);
+      color: white; border-radius: 10px; font-weight: 700;
       transition: all 0.2s; border: 1px solid rgba(255,255,255,0.1);
     }
-    .btn-main:hover { transform: translateY(-2px); box-shadow: 0 10px 30px -10px var(--primary); }
-    .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px; padding: 80px 40px; max-width: 1200px; margin: 0 auto; }
-    .card {
-      background: var(--surface); border: 1px solid var(--border);
-      padding: 40px; transition: all 0.3s;
-    }
-    .card:hover { border-color: var(--primary); transform: translateY(-4px); background: rgba(255,255,255,0.05); }
-    .card h3 { font-size: 20px; margin-bottom: 12px; font-weight: 700; }
-    .card p { color: var(--text-muted); font-size: 15px; }
+    .btn-main:hover { transform: translateY(-2px); box-shadow: 0 12px 30px -12px var(--primary); }
+    h4 { margin-bottom: 6px; font-size: 16px; }
+    span { color: var(--text-muted); font-size: 12px; }
+    ul { list-style: none; }
     footer {
-      padding: 60px 40px; border-top: 1px solid var(--border);
-      text-align: center; color: var(--text-muted); font-size: 13px;
+      padding: 52px 0; border-top: 1px solid var(--border);
+      color: var(--text-muted); font-size: 13px;
     }
+    .footer-grid { display:grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 18px; margin-bottom: 22px; }
+    .footer-grid h5 { color: var(--text); margin-bottom: 8px; font-size: 14px; }
+    .footer-grid a { display:block; margin-bottom: 7px; color: var(--text-muted); font-size: 13px; }
+    .footer-grid a:hover { color: var(--text); }
+    .copyright { border-top: 1px solid rgba(255,255,255,0.08); padding-top: 16px; font-size: 12px; }
+    @media (max-width: 980px) { .footer-grid { grid-template-columns: 1fr; } }
+    ${layoutStyles}
   </style>
 </head>
 <body>
   <!-- ◈◈◈ WEBDEVSCAV SIMULATION START ◈◈◈ -->
   <div id="webdevscav-simulated-root">
   ${bodyContent}
-  <nav>
-    <div class="logo">${title.split('—')[0]}</div>
-    <div style="display:flex; gap:32px; font-size:14px; font-weight:600">
-      <a href="#" style="color:var(--text); text-decoration:none">Network</a>
-      <a href="#" style="color:var(--text-muted); text-decoration:none">Security</a>
-      <a href="#" style="color:var(--text-muted); text-decoration:none">Assets</a>
-    </div>
-  </nav>
-
-  <div class="hero">
-    <h1>Next-Gen <span>Digital</span> Extraction.</h1>
-    <p>Premium audit services for the modern decentralized web. Secure your assets with NeuralFlow.</p>
-    <a href="#" class="btn-main">Explore Platform</a>
-  </div>
-
-  <div class="grid">
-    <div class="card"><h3>01 // ANALYTICS</h3><p>Real-time data stream processing with zero-latency overhead.</p></div>
-    <div class="card"><h3>02 // SECURITY</h3><p>Post-quantum encryption standards for all transit payloads.</p></div>
-    <div class="card"><h3>03 // SCALE</h3><p>Distributed infrastructure spanning 42 global availability zones.</p></div>
-  </div>
-
-  <footer class="footer">
-    <p>&copy; 2026 ${title.split('—')[0]}. INTERNAL_AUDIT_MODE // SESSION_ACTIVE</p>
-  </footer>
+  ${layoutBody}
 
   <script>
     (function() {
       ${scriptContent}
-      console.info("[System] Impeccable Design Engine Initialized.");
+      console.info("[System] Fallback template loaded for theme: ${theme} | layout: ${variant}");
       console.info("[System] Security Audit in progress...");
     })();
   </script>
@@ -442,7 +1138,9 @@ export async function generateWebpage(
 
   let html: string;
 
-  if (isGeminiConfigured()) {
+  const shouldUseGemini = process.env.ENABLE_GEMINI === 'true' && isGeminiConfigured();
+
+  if (shouldUseGemini) {
     try {
       const prompt = buildPrompt(theme, keys);
       const rawHtml = await generateContent(prompt);
@@ -469,7 +1167,7 @@ export async function generateWebpage(
       html = generateFallbackPage(theme, keys);
     }
   } else {
-    console.log('[WebpageGenerator] Gemini not configured, using fallback template');
+    console.log('[WebpageGenerator] Gemini disabled or not configured, using fallback template');
     html = generateFallbackPage(theme, keys);
   }
 
