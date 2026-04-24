@@ -5,10 +5,12 @@ import LandingPage from './pages/LandingPage';
 import Instructions from './pages/Instructions';
 import Leaderboards from './pages/Leaderboards';
 import GamePage from './pages/GamePage';
+import { Analytics } from "@vercel/analytics/next"
 
 export default function App() {
   return (
     <BrowserRouter>
+      <Analytics/>
       <div className="app-layout">
         <Navbar />
 
