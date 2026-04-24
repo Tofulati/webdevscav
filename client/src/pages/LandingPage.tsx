@@ -4,33 +4,127 @@ export default function LandingPage() {
   return (
     <div className="container">
       <section className="hero">
-        <div className="hero-content">
-          <div className="hero-tag">STABLE_BUILD :: V2.1.0</div>
-          <h1>INSPECT. EXPOSE. DOMINATE.</h1>
-          <p>
-            The world&apos;s first competitive scavenger hunt for developers.
-            Use your browser&apos;s internal engine to uncover hidden payloads
-            and security leaks in real-time simulations.
-          </p>
+        <div className="hero-main">
+          <div className="hero-content">
+            <div className="hero-tag">STABLE_BUILD :: V2.1.0</div>
+            <h1>INSPECT. EXPOSE. DOMINATE.</h1>
+            <p>
+              The world&apos;s first competitive scavenger hunt for developers.
+              Use your browser&apos;s internal engine to uncover hidden payloads
+              and security leaks in real-time simulations.
+            </p>
 
-          <div className="hero-actions">
-            <Link to="/play" className="btn btn-primary">
-              LAUNCH_CONSOLE
-            </Link>
-            <Link to="/instructions" className="btn btn-secondary">
-              VIEW_SPECS
-            </Link>
+            <div className="hero-actions">
+              <Link to="/play" className="btn btn-primary">
+                LAUNCH_CONSOLE
+              </Link>
+              <Link to="/instructions" className="btn btn-secondary">
+                VIEW_SPECS
+              </Link>
+            </div>
+          </div>
+
+          <div className="landing-visual">
+            <div className="devtools-sim">
+              <div className="dt-line"><span className="dt-tag">&lt;body&gt;</span></div>
+              <div className="dt-line indent-1"><span className="dt-comm">&lt;!-- ◈◈◈ SYSTEM_INITIALIZED ◈◈◈ --&gt;</span></div>
+              <div className="dt-line indent-1"><span className="dt-tag">&lt;div</span> <span className="dt-attr">id</span>=<span className="dt-str">"leaks"</span><span className="dt-tag">&gt;</span></div>
+              <div className="dt-line indent-2"><span className="dt-text">KEY_EXPOSED_01</span></div>
+              <div className="dt-line indent-1"><span className="dt-tag">&lt;/div&gt;</span></div>
+            </div>
           </div>
         </div>
 
-        <div className="landing-visual">
-          <div className="devtools-sim">
-            <div className="dt-line"><span className="dt-tag">&lt;body&gt;</span></div>
-            <div className="dt-line indent-1"><span className="dt-comm">&lt;!-- ◈◈◈ SYSTEM_INITIALIZED ◈◈◈ --&gt;</span></div>
-            <div className="dt-line indent-1"><span className="dt-tag">&lt;div</span> <span className="dt-attr">id</span>=<span className="dt-str">"leaks"</span><span className="dt-tag">&gt;</span></div>
-            <div className="dt-line indent-2"><span className="dt-text">KEY_EXPOSED_01</span></div>
-            <div className="dt-line indent-1"><span className="dt-tag">&lt;/div&gt;</span></div>
-          </div>
+        <div className="hero-scroll-cue">
+          <span className="visually-hidden">
+            Extended industry briefing, feature specs, and documentation continue below. Scroll to read on.
+          </span>
+          <span className="hero-scroll-cue__rule" aria-hidden="true" />
+          <span className="hero-scroll-cue__label" aria-hidden="true">
+            SCROLL_FOR_EXTENDED_BRIEFING
+          </span>
+          <span className="hero-scroll-cue__glyph" aria-hidden="true">
+            ↓
+          </span>
+        </div>
+      </section>
+
+      <section className="landing-sourced-brief" aria-labelledby="landing-brief-heading">
+        <div className="hero-tag">BRIEFING // CLIENT_SURFACE_RISK</div>
+        <h2 id="landing-brief-heading" className="landing-brief-title">
+          WHY_THE_BROWSER_IS_PART_OF_THE_ATTACK_SURFACE
+        </h2>
+        <p className="landing-brief-lede">
+          WebDevScav is fiction, but the habits it trains map to how real incidents start: credentials and configuration
+          artifacts reach the client, then get copied, cached, or logged where operators do not expect. The points below
+          are grounded in industry reporting and open standards—not leaderboard flavor text.
+        </p>
+        <ul className="landing-brief-points">
+          <li>
+            <strong>Secrets in version control stay a systemic issue.</strong> GitGuardian&apos;s{' '}
+            <em>State of Secrets Sprawl</em> (2024 edition) reported on the order of{' '}
+            <strong>12.8 million</strong> new secrets detected in public GitHub commits during calendar year 2023, with a
+            large share still valid days after exposure—underscoring why &quot;it was only in a commit&quot; is not the same as
+            &quot;it was safe.&quot;
+          </li>
+          <li>
+            <strong>Breach economics are measured in millions, not lunch money.</strong> IBM Security&apos;s{' '}
+            <em>Cost of a Data Breach Report</em> (2024) cites a <strong>global average total cost of USD 4.88 million</strong>{' '}
+            per incident—useful context when judging how much engineering time belongs in secret hygiene, scanning, and
+            post-deploy audits.
+          </li>
+          <li>
+            <strong>APIs and client-adjacent design need explicit threat modeling.</strong> OWASP&apos;s API Security Top 10
+            (broken authentication, improper inventory, excessive data exposure, etc.) is the checklist many teams use once
+            traffic leaves the monolith and fans out across services—exactly the territory you probe from DevTools.
+          </li>
+          <li>
+            <strong>If the bytes were sent to the browser, they can be inspected.</strong> MDN&apos;s documentation on
+            developer tools describes inspecting and editing live pages; assume any token, URL, or debug string in HTML,
+            JS bundles, storage, or network responses is recoverable by a motivated reader with the same tools you use in
+            this hunt.
+          </li>
+        </ul>
+
+        <div className="landing-ref-panel">
+          <h3 className="landing-ref-panel__title">REFERENCES_ON_RECORD</h3>
+          <ol className="landing-ref-list">
+            <li>
+              GitGuardian, <cite>State of Secrets Sprawl Report</cite> (2024).{' '}
+              <a href="https://www.gitguardian.com/state-of-secrets-sprawl-report-2024" rel="noopener noreferrer" target="_blank">
+                gitguardian.com/state-of-secrets-sprawl-report-2024
+              </a>
+            </li>
+            <li>
+              IBM Security, <cite>Cost of a Data Breach Report</cite> (2024).{' '}
+              <a href="https://www.ibm.com/reports/data-breach" rel="noopener noreferrer" target="_blank">
+                ibm.com/reports/data-breach
+              </a>
+            </li>
+            <li>
+              OWASP Foundation, <cite>OWASP API Security Top 10</cite>.{' '}
+              <a href="https://owasp.org/www-project-api-security/" rel="noopener noreferrer" target="_blank">
+                owasp.org/www-project-api-security
+              </a>
+            </li>
+            <li>
+              Mozilla, <cite>Understanding client-side web development tools</cite> (MDN).{' '}
+              <a
+                href="https://developer.mozilla.org/en-US/docs/Learn/Tools_and_testing/Understanding_client-side_tools/Overview"
+                rel="noopener noreferrer"
+                target="_blank"
+              >
+                developer.mozilla.org — client-side tools overview
+              </a>
+            </li>
+            <li>
+              Verizon, <cite>Data Breach Investigations Report</cite> (annual). Useful for how stolen credentials and
+              social paths show up year over year in large breach corpora.{' '}
+              <a href="https://www.verizon.com/business/resources/reports/dbir/" rel="noopener noreferrer" target="_blank">
+                verizon.com/business/resources/reports/dbir
+              </a>
+            </li>
+          </ol>
         </div>
       </section>
 

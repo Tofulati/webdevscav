@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 
 export default function Instructions() {
   return (
-    <div className="container" style={{ paddingTop: '80px', paddingBottom: '20px' }}>
+    <div className="container instructions-shell">
       <div className="instructions-page">
         <div className="hero-tag">OPERATIONAL_MANUAL // V2.1.0</div>
         <h1>THE_HUNTER_GUIDE</h1>
@@ -175,22 +175,108 @@ export default function Instructions() {
                 <div>CONSOLE</div>
                 <div>NETWORK</div>
               </div>
-              <div className="sd-content" style={{ flex: 1, padding: '20px', fontFamily: 'var(--font-mono)', fontSize: '11px', overflow: 'hidden', position: 'relative' }}>
-                <div style={{ color: '#808080' }}>&lt;!-- MISSION_INITIALIZED --&gt;</div>
-                <div style={{ color: '#5db0d7' }}>&lt;div <span style={{ color: '#9cdcfe' }}>id</span>=<span style={{ color: '#ce9178' }}>"sim-root"</span>&gt;</div>
-                <div style={{ paddingLeft: '32px', color: '#5db0d7', background: 'rgba(54, 124, 255, 0.1)', borderLeft: '2px solid #367cff' }}>
-                   &lt;div <span style={{ color: '#9cdcfe' }}>class</span>=<span style={{ color: '#ce9178' }}>"payload"</span> <span style={{ color: '#9cdcfe' }}>data-key</span>=<span style={{ color: '#ce9178' }}>"KEY_FOUND_V2"</span>&gt;
+              <div
+                className="sd-content"
+                style={{
+                  flex: 1,
+                  padding: '12px 12px 68px',
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: '10px',
+                  lineHeight: 1.55,
+                  overflow: 'auto',
+                  position: 'relative',
+                  minHeight: 0,
+                }}
+              >
+                <div className="dt-line">
+                  <span className="dt-tag">&lt;html</span> <span className="dt-attr">lang</span>=<span className="dt-str">"en"</span>
+                  <span className="dt-tag">&gt;</span>
+                </div>
+                <div className="dt-line indent-1">
+                  <span className="dt-tag">&lt;head&gt;</span>
+                </div>
+                <div className="dt-line indent-2">
+                  <span className="dt-tag">&lt;meta</span> <span className="dt-attr">charset</span>=<span className="dt-str">"UTF-8"</span>
+                  <span className="dt-tag">&gt;</span>
+                </div>
+                <div className="dt-line indent-2">
+                  <span className="dt-tag">&lt;meta</span> <span className="dt-attr">name</span>=<span className="dt-str">"viewport"</span>{' '}
+                  <span className="dt-attr">content</span>=<span className="dt-str">"width=device-width, initial-scale=1.0"</span>
+                  <span className="dt-tag">&gt;</span>
+                </div>
+                <div className="dt-line indent-2">
+                  <span className="dt-tag">&lt;meta</span> <span className="dt-attr">name</span>=<span className="dt-str">"product:retailer_item_id"</span>{' '}
+                  <span className="dt-attr">content</span>=<span className="dt-str">"v2-ba274fda-c8af9043"</span>
+                  <span className="dt-tag">&gt;</span>
+                </div>
+                <div className="dt-line indent-2">
+                  <span className="dt-tag">&lt;title&gt;</span>
+                  <span className="dt-text">ScreenWave – Premium Streaming Network</span>
+                  <span className="dt-tag">&lt;/title&gt;</span>
+                </div>
+                <div className="dt-line indent-2">
+                  <span className="dt-tag">&lt;style&gt;</span>
+                  <span className="dt-text"> … </span>
+                  <span className="dt-tag">&lt;/style&gt;</span>
+                </div>
+                <div className="dt-line indent-1">
+                  <span className="dt-tag">&lt;/head&gt;</span>
+                </div>
+                <div className="dt-line indent-1">
+                  <span className="dt-tag">&lt;body&gt;</span>
+                </div>
+                <div className="dt-line indent-2">
+                  <span className="dt-comm">&lt;!-- ◈◈◈ WEBDEVSCAV SIMULATION START ◈◈◈ --&gt;</span>
+                </div>
+                <div className="dt-line indent-2">
+                  <span className="dt-tag">&lt;div</span> <span className="dt-attr">id</span>=<span className="dt-str">"webdevscav-simulated-root"</span>
+                  <span className="dt-tag">&gt;</span>
+                </div>
+                <div className="dt-line indent-3">
+                  <span className="dt-tag">&lt;div</span> <span className="dt-attr">class</span>=<span className="dt-str">"layout-streaming-app site-shell"</span>
+                  <span className="dt-tag">&gt;</span>
+                </div>
+                <div
+                  className="dt-line indent-4"
+                  style={{
+                    background: 'rgba(54, 124, 255, 0.12)',
+                    boxShadow: 'inset 3px 0 0 #367cff',
+                    margin: '2px 0',
+                    paddingTop: 2,
+                    paddingBottom: 2,
+                  }}
+                >
+                  <span className="dt-tag">&lt;header</span> <span className="dt-attr">class</span>=<span className="dt-str">"top-nav"</span>
+                  <span className="dt-tag">&gt;</span>
+                </div>
+                <div className="dt-line indent-5">
+                  <span className="dt-tag">&lt;div</span> <span className="dt-attr">class</span>=<span className="dt-str">"brand"</span>
+                  <span className="dt-tag">&gt;</span>
+                  <span className="dt-text">ScreenWave</span>
+                  <span className="dt-tag">&lt;/div&gt;</span>
+                </div>
+                <div className="dt-line indent-5">
+                  <span className="dt-tag">&lt;div</span> <span className="dt-attr">class</span>=<span className="dt-str">"links"</span>
+                  <span className="dt-tag">&gt;</span>
+                  <span className="dt-text"> … </span>
+                  <span className="dt-tag">&lt;/div&gt;</span>
+                </div>
+                <div className="dt-line indent-4">
+                  <span className="dt-tag">&lt;/header&gt;</span>
+                </div>
+                <div className="dt-line indent-3">
+                  <span className="dt-text">…</span>
                 </div>
                 <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '60px', background: '#1c1c1c', borderTop: '1px solid #333', padding: '10px' }}>
-                  <div style={{ color: '#00ff00', fontSize: '10px' }}>&gt; Initializing Scavenger_Protocol...</div>
-                  <div style={{ color: '#fff', fontSize: '10px' }}>&gt; Key matched: KEY_FOUND_V2</div>
+                  <div style={{ color: '#6ee7b7', fontSize: '10px' }}>&gt; Document: #sim-frame</div>
+                  <div style={{ color: '#fff', fontSize: '10px' }}>&gt; Selection: header.top-nav</div>
                 </div>
               </div>
             </div>
           </div>
         </section>
 
-        <div style={{ marginTop: '80px', textAlign: 'center' }}>
+        <div className="instructions-deploy-cta">
           <div className="hero-tag" style={{ marginBottom: '16px' }}>READY_FOR_DEPLOYMENT?</div>
           <Link to="/play" className="btn btn-primary" style={{ padding: '16px 16px' }}>
             Initialize First Session

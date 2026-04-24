@@ -23,7 +23,7 @@ export default function Leaderboards() {
   }, [period, mode, difficulty]);
 
   return (
-    <div className="container" style={{ paddingTop: '80px', paddingBottom: '120px' }}>
+    <div className="container leaderboard-shell">
       <div className="leaderboard-page">
         <div className="hero-tag">GLOBAL_METRICS :: V2.1.0</div>
         <h1>AUDIT_LEADERBOARD</h1>
