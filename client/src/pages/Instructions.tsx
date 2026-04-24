@@ -1,10 +1,10 @@
 import { Link } from 'react-router-dom';
+import { SIM_FRAME_ELEMENTS_JUMP } from '../components/game/SimulatedBrowser';
 
 export default function Instructions() {
   return (
     <div className="container instructions-shell">
       <div className="instructions-page">
-        <div className="hero-tag">OPERATIONAL_MANUAL // V2.1.0</div>
         <h1>THE_HUNTER_GUIDE</h1>
         <p className="subtitle">Master the art of DOM forensics and network interception.</p>
 
@@ -78,11 +78,28 @@ export default function Instructions() {
         <section className="guide-section">
           <h2>04 // TARGET_DOCUMENT</h2>
           <p>
-            DevTools attached to the scavenger page show the parent DOM first. Expand{' '}
-            <code>#sim-frame</code> → <code>#document</code> → <code>&lt;html&gt;</code> → <code>&lt;body&gt;</code>; the
-            simulated app lives under <code>webdevscav-simulated-root</code>. You can also right-click inside the
-            simulated viewport → <strong>Inspect</strong>, then confirm the selection sits under that iframe document
-            before you walk the tree.
+            The game cannot open DevTools or force the Elements panel into the iframe for you—browsers only allow that
+            from user gestures and built-in shortcuts.
+          </p>
+          <p>
+            <strong>Fastest path:</strong> right-click <em>inside</em> the simulated page (the content below the fake URL
+            bar, not the scavenger chrome around it) and choose <strong>Inspect</strong>. DevTools attaches to the iframe
+            document and selects the node you clicked—confirm you see <code>webdevscav-simulated-root</code> in the
+            breadcrumb or tree.
+          </p>
+          <p>
+            <strong>Chromium (Chrome, Edge, Brave, …):</strong> with DevTools already open on this tab, use{' '}
+            <strong>Copy Console jump</strong> on the simulated browser bar, then paste into the <strong>Console</strong>{' '}
+            and press Enter. That runs the DevTools helper <code>inspect(…)</code> and jumps Elements to{' '}
+            <code>#webdevscav-simulated-root</code> inside <code>#sim-frame</code>. The line is:
+          </p>
+          <pre className="instructions-code-block">
+            <code>{SIM_FRAME_ELEMENTS_JUMP}</code>
+          </pre>
+          <p>
+            <strong>Manual tree walk:</strong> from the parent document, expand <code>#sim-frame</code> →{' '}
+            <code>#document</code> → <code>&lt;html&gt;</code> → <code>&lt;body&gt;</code>; the simulated app lives under{' '}
+            <code>webdevscav-simulated-root</code>.
           </p>
           <div className="devtools-sim">
             <div className="dt-line"><span className="dt-tag">&lt;iframe</span> <span className="dt-attr">id</span>=<span className="dt-str">"sim-frame"</span> <span className="dt-tag">&gt;</span></div>

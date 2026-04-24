@@ -25,7 +25,6 @@ export default function Leaderboards() {
   return (
     <div className="container leaderboard-shell">
       <div className="leaderboard-page">
-        <div className="hero-tag">GLOBAL_METRICS :: V2.1.0</div>
         <h1>AUDIT_LEADERBOARD</h1>
         <p className="subtitle">High-performance audit runs tracked across the network.</p>
 

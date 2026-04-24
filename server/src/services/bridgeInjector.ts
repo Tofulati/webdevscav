@@ -20,6 +20,21 @@ const BRIDGE_SCRIPT = `
 })();
 </script>`;
 
+const SCRIPT_MOUNT_STYLE = `
+<style data-webdevscav="script-mount-ui">
+/* Inline scripts still execute inside this host; it only removes them from layout/paint. */
+#webdevscav-simulated-root .webdevscav-script-mount{display:none!important}
+</style>`;
+
+/** Ensures .webdevscav-script-mount is non-rendering when generators wrap execution-only scripts there. */
+export function injectScriptMountStyle(html: string): string {
+  const headClose = html.search(/<\/head>/i);
+  if (headClose !== -1) {
+    return html.slice(0, headClose) + SCRIPT_MOUNT_STYLE + '\n' + html.slice(headClose);
+  }
+  return html;
+}
+
 /**
  * Injects a small script to prevent the generated webpage from navigating away
  * when links are clicked or forms are submitted.

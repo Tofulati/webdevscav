@@ -6,7 +6,6 @@ export default function LandingPage() {
       <section className="hero">
         <div className="hero-main">
           <div className="hero-content">
-            <div className="hero-tag">STABLE_BUILD :: V2.1.0</div>
             <h1>INSPECT. EXPOSE. DOMINATE.</h1>
             <p>
               The world&apos;s first competitive scavenger hunt for developers.

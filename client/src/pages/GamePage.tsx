@@ -176,9 +176,11 @@ export default function GamePage() {
           <div className="devtools-warning">
             <div className="warning-title warning-title--urgent">REQUIRED_CONFIGURATION //</div>
             <p>
-              Open your browser's Developer Tools (<strong>F12</strong> or <strong>Cmd+Opt+I</strong>). 
+              Open your browser&apos;s Developer Tools (<strong>F12</strong> or <strong>Cmd+Opt+I</strong>). 
               For the optimal experience, <strong>dock DevTools to the bottom</strong> of the window. 
               This ensures the technical toolbar remains fully visible during the run.
+              After a run starts, right-click <strong>inside</strong> the simulated page to Inspect that inner document,
+              or use <strong>Copy Console jump</strong> on the simulated browser bar (Chromium) and paste into the Console.
               <br></br><br></br>
               <strong>This game is only available for PCs and Laptops only, as other systems are incompatible.</strong>
             </p>
@@ -243,6 +245,11 @@ export default function GamePage() {
             <p className="pre-start-body pre-start-hint">
               Docking DevTools to the bottom (if that works for you) usually makes the page easier to
               inspect alongside the tools.
+            </p>
+            <p className="pre-start-body pre-start-hint">
+              To land in the <strong>simulated</strong> document: right-click inside the fake webpage (below the URL bar)
+              and choose <strong>Inspect</strong>. On Chromium you can also use <strong>Copy Console jump</strong> on that
+              bar after DevTools is open, then paste into the Console.
             </p>
             <div className="pre-start-count" aria-hidden="true">
               {armingSecondsLeft ?? PRESTART_COUNTDOWN_SEC}

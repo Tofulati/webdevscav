@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
 import { generateContent, isGeminiConfigured } from './gemini.js';
-import { injectBridgeScript } from './bridgeInjector.js';
+import { injectBridgeScript, injectScriptMountStyle } from './bridgeInjector.js';
 import type { HiddenKey, GameSession, WebpageTheme } from '../types/index.js';
 
 const SIMULATION_START_MARKER = '<!-- ◈◈◈ WEBDEVSCAV SIMULATION START ◈◈◈ -->';
@@ -462,6 +462,7 @@ RULES:
 - The page must be 100% self-contained (all CSS in <style>, all JS in <script>).
 - Ensure non-plaintext hidden keys are NOT visible on the rendered UI, but easily findable via Developer Tools. Plaintext keys must appear as exact character sequences in the HTML (inside realistic copy or in visually hidden/off-screen text), never as an obvious labeled “key” callout.
 - SCRIPT_DISCIPLINE: Do NOT put every secret in one giant <script> at the bottom. Split into several small <script> blocks placed in different sections of the body (between content blocks). In JavaScript, do not paste raw key strings—use only atob("BASE64_UTF8") for any key material (compute base64 of the exact UTF-8 bytes of the key).
+- SCRIPT_MOUNT (optional): Any inline <script> that only runs side effects (storage, fetch, console, globals) and does not build visible DOM may be wrapped together in one final child of #webdevscav-simulated-root: <div class="webdevscav-script-mount" style="display:none" aria-hidden="true"> ...scripts... </div>. Browsers still execute scripts inside display:none; this keeps the simulated viewport tidy. Escape any </script> sequence inside JS strings (e.g. split as '<' + '/script>') so parser does not spill script text onto the page.
 - SIMULATED_UI_FIRST: The HTML is a believable single-page app or marketing surface for the theme. Any button, link, redirect, or fetch that exposes a key must be part of that surface's normal chrome (nav, editor toolbar, cart, settings, feed cards)—not an injected sentence about CI, diffing, shadow rows, internal refs, or other fake infra copy that would not appear on a public page. Generate the fake UI first; attach the minimal script or inline handler so the interaction a player would naturally try is what triggers the leak.
 - NO_SYNTHETIC_INTERNALS: Do not add standalone microcopy whose only purpose is to smuggle a control or token (e.g. “CI attaches an internal ref beside the changelog”, “shadow row drifts from pricing”). If copy sounds like employee-only pipeline jargon unrelated to the visible product story, replace it with customer- or product-facing wording while preserving DevTools discoverability.
 - INTERACTION_KEYS: For click-to-fetch or click-to-reveal patterns, wire handlers to controls that already exist in the layout for narrative reasons (primary/secondary CTAs, list row actions, modal footers). Keys must not appear until interaction. For HTML onclick handlers wrapped in single quotes, use { cache: "no-store" } with double quotes inside JavaScript—never backslash-escaped quotes inside the attribute. Prefer fetch to /api/game/dummy?... on click so the request always records. For console-invoke, expose one global function that returns or logs the key; you may leave a single subtle HTML comment naming the function. For faux vendor bundles, add a secondary inline script with a vendor-style comment header; the key may appear only as a base64 literal passed into an IIFE—do not write the decoded key into the DOM for that pattern.
@@ -1532,7 +1533,9 @@ function generateFallbackPage(theme: WebpageTheme, keys: HiddenKey[]): string {
   <div id="webdevscav-simulated-root">
   ${layoutHtml}
 
+  <div class="webdevscav-script-mount" style="display:none" aria-hidden="true">
 ${scriptTagsHtml}
+  </div>
   </div>
 </body>
 </html>`;
@@ -1599,6 +1602,8 @@ export async function generateWebpage(
   }
 
   html = ensureSimulationStartMarker(html);
+
+  html = injectScriptMountStyle(html);
 
   // Inject the bridge script for DevTools communication
   html = injectBridgeScript(html);
