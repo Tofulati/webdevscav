@@ -4,5 +4,8 @@
   "workspaces": [
     "client",
     "server"
-  ]
+  ],
+  "dependencies": {
+    "@vercel/analytics": "^2.0.1"
+  }
 }

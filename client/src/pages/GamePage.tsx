@@ -36,7 +36,7 @@ export default function GamePage() {
       totalKeys: game.state.totalKeys,
       timeUsed: game.state.timeLimit - game.state.timeRemaining,
       difficulty: game.state.difficulty,
-      mode: 'solo',
+      mode: playerMode,
       theme: game.state.theme,
     });
     setSubmitted(true);
@@ -44,6 +44,7 @@ export default function GamePage() {
   };
 
   const [selectedDifficulty, setSelectedDifficulty] = useState<string | null>(null);
+  const [playerMode, setPlayerMode] = useState<'single' | 'multiplayer'>('single');
 
   const handleStartGame = () => {
     if (selectedDifficulty) {
@@ -78,13 +79,54 @@ export default function GamePage() {
             </button>
           </div>
 
+          <h2>SELECT_SESSION_TYPE</h2>
+          <p>Multiplayer is coming soon. Use single player for now.</p>
+          <div className="mode-selection" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1px', background: 'var(--border)', border: '1px solid var(--border)', marginBottom: '40px' }}>
+            <button
+              className={`mode-select-btn ${playerMode === 'single' ? 'active' : ''}`}
+              onClick={() => setPlayerMode('single')}
+            >
+              <div className="icon">◉</div>
+              <h4>SINGLE_PLAYER</h4>
+              <p>Run solo extraction.</p>
+            </button>
+            <button
+              className="mode-select-btn"
+              disabled
+              style={{ opacity: 0.4, cursor: 'not-allowed' }}
+            >
+              <div className="icon">◎</div>
+              <h4>MULTIPLAYER</h4>
+              <p>DISABLED // COMING_SOON</p>
+            </button>
+          </div>
+
           <h2>SELECT_AUDIT_LEVEL</h2>
-          <p>Higher difficulty levels increase key density and use more cryptic encryption.</p>
+          <p>
+            {game.state.mode === 'fastest'
+              ? 'Higher difficulty levels increase key density and use more cryptic encryption.'
+              : 'Higher difficulty levels increase challenge density and use more cryptic encryption.'}
+          </p>
           <div className="diff-options">
             {[
-              { level: 'easy', label: 'EASY', desc: '10_KEYS // CLEAR_HINTS', marker: 'L1' },
-              { level: 'medium', label: 'MEDIUM', desc: '20_KEYS // TECH_HINTS', marker: 'L2' },
-              { level: 'hard', label: 'HARD', desc: '30_KEYS // CRYPTIC_HINTS', marker: 'L3' },
+              {
+                level: 'easy',
+                label: 'EASY',
+                desc: game.state.mode === 'fastest' ? '10_KEYS // CLEAR_HINTS' : '∞_KEY_STREAM // CLEAR_HINTS',
+                marker: 'L1'
+              },
+              {
+                level: 'medium',
+                label: 'MEDIUM',
+                desc: game.state.mode === 'fastest' ? '20_KEYS // TECH_HINTS' : '∞_KEY_STREAM // TECH_HINTS',
+                marker: 'L2'
+              },
+              {
+                level: 'hard',
+                label: 'HARD',
+                desc: game.state.mode === 'fastest' ? '30_KEYS // CRYPTIC_HINTS' : '∞_KEY_STREAM // CRYPTIC_HINTS',
+                marker: 'L3'
+              },
             ].map(d => (
               <button 
                 key={d.level} 
@@ -156,12 +198,20 @@ export default function GamePage() {
         <div className="game-complete-overlay">
           <div className="game-complete-card">
             <div className="hero-tag">SESSION_TERMINATED</div>
-            <h2>{game.state.keysFound === game.state.totalKeys ? "PERFECT_EXTRACTION" : "EXTRACTION_COMPLETE"}</h2>
+            <h2>
+              {game.state.mode === 'fastest' && game.state.keysFound === game.state.totalKeys
+                ? "PERFECT_EXTRACTION"
+                : "EXTRACTION_COMPLETE"}
+            </h2>
             <div className="final-score">{game.state.score}</div>
             
             <div className="game-complete-stats">
               <div className="game-complete-stat">
-                <div className="val">{game.state.keysFound}/{game.state.totalKeys}</div>
+                <div className="val">
+                  {game.state.mode === 'fastest'
+                    ? `${game.state.keysFound}/${game.state.totalKeys}`
+                    : `${game.state.keysFound}/∞`}
+                </div>
                 <div className="lbl">LEAKS_EXPOSED</div>
               </div>
               <div className="game-complete-stat">

@@ -73,7 +73,7 @@ export function useGame() {
       if (result.correct && !result.alreadyFound) {
         setState(prev => {
           const newKeysFound = result.keysFound;
-          const isComplete = newKeysFound === result.totalKeys;
+          const isComplete = prev.mode === 'fastest' && newKeysFound === result.totalKeys;
           
           // If complete and in fastest mode, score is the timeElapsed
           const finalScore = (isComplete && prev.mode === 'fastest') ? prev.timeElapsed : result.score;
@@ -106,6 +106,7 @@ export function useGame() {
       setState(prev => ({
         ...prev,
         hintsUsed: prev.hintsUsed + 1,
+        score: prev.mode === 'endless' ? Math.max(0, prev.score - 25) : prev.score,
         tasks: prev.tasks.map(t => t.id === taskId ? { ...t, hintRevealed: hint.hint } : t),
       }));
       return hint;
@@ -122,7 +123,12 @@ export function useGame() {
 
   const endGame = useCallback(() => {
     if (timerRef.current) clearInterval(timerRef.current);
-    setState(prev => ({ ...prev, status: 'completed' }));
+    setState(prev => {
+      const finalizedScore = prev.mode === 'fastest'
+        ? prev.timeElapsed
+        : Math.max(0, prev.keysFound * 100 - prev.hintsUsed * 25);
+      return { ...prev, score: finalizedScore, status: 'completed' };
+    });
   }, []);
 
   return { state, setState, toast, start, submitKey, requestHint, reset, endGame, showToast };

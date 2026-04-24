@@ -419,6 +419,12 @@ button {
 .mode-select-btn:hover { background: var(--bg-surface); }
 .mode-select-btn.active { background: var(--accent); }
 .mode-select-btn.active .icon, .mode-select-btn.active h4, .mode-select-btn.active p { color: var(--accent-inverse); opacity: 1; }
+.mode-select-btn:disabled {
+  background: var(--bg-primary);
+  color: var(--text-dim);
+  cursor: not-allowed;
+}
+.mode-select-btn:disabled:hover { background: var(--bg-primary); }
 
 .mode-select-btn .icon { font-size: 32px; margin-bottom: 20px; opacity: 0.5; color: var(--text); }
 .mode-select-btn h4 { font-size: 14px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; color: var(--text); }
