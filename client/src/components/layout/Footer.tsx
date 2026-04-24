@@ -32,8 +32,8 @@ export function Footer() {
               textDecoration: 'none',
               transition: 'opacity 0.2s ease',
             }}
-            onMouseEnter={(e) => (e.target.style.opacity = 0.7)}
-            onMouseLeave={(e) => (e.target.style.opacity = 1)}
+            onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.7')}
+            onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
           >
             ALBERT_HO
           </a>
@@ -51,8 +51,8 @@ export function Footer() {
               textDecoration: 'none',
               transition: 'opacity 0.2s ease',
             }}
-            onMouseEnter={(e) => (e.target.style.opacity = 0.7)}
-            onMouseLeave={(e) => (e.target.style.opacity = 1)}
+            onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.7')}
+            onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
           >
             GITHUB_REPO
           </a>
