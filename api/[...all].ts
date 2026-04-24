@@ -1,10 +1,13 @@
-import dotenv from 'dotenv';
-import { createApp } from '../server/src/app';
+let appPromise: Promise<any> | null = null;
 
-dotenv.config();
+async function getApp() {
+  if (!appPromise) {
+    appPromise = import('../server/src/app.js').then((mod) => mod.createApp());
+  }
+  return appPromise;
+}
 
-const app = createApp();
-
-export default function handler(req: any, res: any) {
+export default async function handler(req: any, res: any) {
+  const app = await getApp();
   return app(req, res);
 }
