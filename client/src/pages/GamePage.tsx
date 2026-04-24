@@ -110,11 +110,13 @@ export default function GamePage() {
           </div>
 
           <div className="devtools-warning">
-            <div className="warning-title">REQUIRED_CONFIGURATION //</div>
+            <div className="warning-title" style={{color: 'red'}}>REQUIRED_CONFIGURATION //</div>
             <p>
               Open your browser's Developer Tools (<strong>F12</strong> or <strong>Cmd+Opt+I</strong>). 
               For the optimal experience, <strong>dock DevTools to the bottom</strong> of the window. 
               This ensures the technical toolbar remains fully visible during the session.
+              <br></br><br></br>
+              <strong>This game is only available for PCs and Laptops only, as other systems are incompatible.</strong>
             </p>
           </div>
         </div>

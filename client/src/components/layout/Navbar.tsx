@@ -13,24 +13,15 @@ export default function Navbar() {
       </Link>
       
       <div className="navbar-links">
-        {location.pathname !== '/' && (
-          <>
-            <Link to="/play" className={isActive('/play') ? 'active' : ''}>
-              PLAY
-            </Link>
-          </>
-        )}
+        <Link to="/play" className={isActive('/play') ? 'active' : ''}>
+          PLAY
+        </Link>
         <Link to="/leaderboard" className={isActive('/leaderboard') ? 'active' : ''}>
           LEADERBOARD
         </Link>
         <Link to="/instructions" className={isActive('/instructions') ? 'active' : ''}>
           HOW TO PLAY
         </Link>
-        {location.pathname !== '/' && (
-          <Link to="/play" className="btn btn-primary btn-small">
-            LAUNCH CONSOLE
-          </Link>
-        )}
       </div>
     </nav>
   );

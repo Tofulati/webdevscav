@@ -119,7 +119,7 @@ export default function LandingPage() {
       </section>
 
       {/* Security Education Section */}
-      <section className="education-section" style={{ marginTop: '80px', padding: '80px 0', borderTop: '1px solid var(--border)' }}>
+      <section className="education-section" style={{ marginTop: '80px', marginBottom: '80px', padding: '80px 0', borderTop: '1px solid var(--border)' }}>
         <div className="hero-tag">KNOWLEDGE_BASE // SECURITY_VULNERABILITIES</div>
         <h2 style={{ fontSize: '48px', fontWeight: 900, marginBottom: '32px', letterSpacing: '-2px' }}>THE_DANGER_OF_SOURCE_LEAKS</h2>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '60px' }}>

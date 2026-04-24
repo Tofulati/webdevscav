@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 
 export default function Instructions() {
   return (
-    <div className="container" style={{ paddingTop: '80px', paddingBottom: '120px' }}>
+    <div className="container" style={{ paddingTop: '80px', paddingBottom: '20px' }}>
       <div className="instructions-page">
         <div className="hero-tag">OPERATIONAL_MANUAL // V2.1.0</div>
         <h1>THE_HUNTER_GUIDE</h1>
@@ -28,13 +28,11 @@ export default function Instructions() {
                 <li><strong>macOS:</strong> Cmd + Opt + I</li>
                 <li><strong>Windows/Linux:</strong> F12 or Ctrl + Shift + I</li>
               </ul>
-              <div style={{ marginTop: '24px' }}>
-                <p><strong>Step 2: Dock Side</strong></p>
-                <ol style={{ fontSize: '14px', opacity: 0.8 }}>
-                  <li>Click three dots (⋮)</li>
-                  <li>Select <strong>Dock to bottom</strong> (▢)</li>
-                </ol>
-              </div>
+              <p><strong>Step 2: Dock Side</strong></p>
+              <ul style={{ fontSize: '14px', opacity: 0.8 }}>
+                <li>Click three dots (⋮)</li>
+                <li>Select <strong>Dock to bottom</strong> (▢)</li>
+              </ul>
             </div>
             <div className="docking-guide" style={{ margin: 0 }}>
               <div className="dock-window">
@@ -128,7 +126,7 @@ export default function Instructions() {
 
         <div style={{ marginTop: '80px', textAlign: 'center' }}>
           <div className="hero-tag" style={{ marginBottom: '16px' }}>READY_FOR_DEPLOYMENT?</div>
-          <Link to="/play" className="btn btn-primary" style={{ padding: '16px 48px' }}>
+          <Link to="/play" className="btn btn-primary" style={{ padding: '16px 16px' }}>
             Initialize First Session
           </Link>
         </div>
