@@ -6,8 +6,13 @@ let db: admin.firestore.Firestore | null = null;
 try {
   // Try to initialize Firebase if credentials are provided
   if (process.env.FIREBASE_PROJECT_ID) {
+    const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
+    const credential = serviceAccountJson
+      ? admin.credential.cert(JSON.parse(serviceAccountJson))
+      : admin.credential.applicationDefault();
+
     admin.initializeApp({
-      credential: admin.credential.applicationDefault(), // or via service account if preferred
+      credential,
       projectId: process.env.FIREBASE_PROJECT_ID,
     });
     db = admin.firestore();

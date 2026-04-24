@@ -1,4 +1,4 @@
-const API_BASE = 'http://localhost:3001/api';
+const API_BASE = (import.meta.env.VITE_API_BASE_URL || '/api').replace(/\/$/, '');
 
 export async function startGame(difficulty: string = 'medium', mode: string = 'fastest', theme?: string) {
   const res = await fetch(`${API_BASE}/game/start`, {

@@ -437,7 +437,7 @@ export async function generateWebpage(difficulty = 'medium', mode = 'fastest', r
     // Updated key counts: Easy=10, Medium=20, Hard=30
     const keyCount = difficulty === 'easy' ? 10 : difficulty === 'medium' ? 20 : 30;
     // Time limits for Endless mode (in Fastest mode, timer counts up, so limit is just a safety cap)
-    const timeLimit = mode === 'endless' ? 300 : 900;
+    const timeLimit = mode === 'endless' ? 120 : 900;
     const keys = generateKeys(keyCount, difficulty);
     const sessionId = uuidv4();
     let html;
