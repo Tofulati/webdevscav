@@ -8,52 +8,83 @@ export default function Instructions() {
         <h1>THE_HUNTER_GUIDE</h1>
         <p className="subtitle">Master the art of DOM forensics and network interception.</p>
 
-        {/* 01 // OVERVIEW */}
+        {/* 01 // GOAL */}
         <section className="guide-section">
           <h2>01 // MISSION_OBJECTIVE</h2>
           <p>
-            Your goal is to extract "Exposed Keys" hidden within simulated production environments. 
-            These keys follow the <code>KEY_XXXXX</code> pattern and are buried deep within the 
-            application's state, source code, and network headers.
+            Extract every <code>KEY_*</code> token hidden in a simulated production surface. Keys may appear in markup,
+            comments, attributes, fetch payloads, headers, storage, or console output—never assume the visible UI is the
+            whole story.
           </p>
         </section>
 
-        {/* 02 // SETUP & DOCKING */}
+        {/* 02 // PLAY FLOW */}
         <section className="guide-section">
-          <h2>02 // ENVIRONMENT_CONFIGURATION</h2>
+          <h2>02 // SESSION_PROTOCOL</h2>
+          <ol className="workflow-steps">
+            <li>
+              <strong>Initialize.</strong> Choose difficulty and mode on the play screen. After the countdown, the
+              fiction loads inside <code>#sim-frame</code> (see §04)—native DevTools must target that inner document.
+            </li>
+            <li>
+              <strong>Orient.</strong> Open <strong>AUDIT_TASKS</strong> in the bottom toolbar for objectives and
+              optional hints. Mine those lines for literal strings you can search in Elements and Network.
+            </li>
+            <li>
+              <strong>Extract and submit.</strong> Paste the full token (including the <code>KEY_</code> prefix) into the
+              toolbar field and <strong>SUBMIT</strong>. Only server-valid keys advance; re-copy from the source if a
+              guess fails—harder tiers reuse similar prefixes.
+            </li>
+            <li>
+              <strong>Finish.</strong> <strong>FASTEST_TIME</strong> ends when every key is cleared; the clock is the
+              run. <strong>MAX_EXTRACTION</strong> runs until you <strong>TERMINATE</strong> or time expires—revealed
+              hints cost score there, so request them when you are blocked, not at the first unknown.
+            </li>
+          </ol>
+        </section>
+
+        {/* 03 // DEVTOOLS CHROME */}
+        <section className="guide-section">
+          <h2>03 // DEVTOOLS_LAYOUT</h2>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.2fr', gap: '40px', alignItems: 'center' }}>
             <div className="setup-box" style={{ margin: 0 }}>
-              <p><strong>Step 1: Open Developer Tools</strong></p>
-              <ul style={{ fontSize: '14px', opacity: 0.8 }}>
+              <p><strong>Open</strong></p>
+              <ul>
                 <li><strong>macOS:</strong> Cmd + Opt + I</li>
                 <li><strong>Windows/Linux:</strong> F12 or Ctrl + Shift + I</li>
               </ul>
-              <p><strong>Step 2: Dock Side</strong></p>
-              <ul style={{ fontSize: '14px', opacity: 0.8 }}>
-                <li>Click three dots (⋮)</li>
-                <li>Select <strong>Dock to bottom</strong> (▢)</li>
+              <p><strong>Dock</strong></p>
+              <ul>
+                <li>Menu (⋮) → <strong>Dock to bottom</strong> so the scavenger toolbar stays usable.</li>
               </ul>
+              <p className="tip">
+                On timed modes, settle layout and panel widths before the mission clock starts—rearranging mid-run burns
+                the same attention as a bad search path.
+              </p>
             </div>
             <div className="docking-guide" style={{ margin: 0 }}>
               <div className="dock-window">
                 <div className="dock-top"></div>
                 <div className="dock-bottom active">NATIVE_DEVTOOLS</div>
               </div>
-              <p className="tip" style={{ marginTop: '12px', fontSize: '11px' }}>
-                Docking to the bottom ensures the Scavenger Toolbar remains visible during inspection.
+              <p className="tip">
+                Bottom dock keeps the simulation and extraction controls in view.
               </p>
             </div>
           </div>
         </section>
 
-        {/* 03 // FINDING THE SIMULATION */}
+        {/* 04 // IFRAME + HOW TO MOVE IN TREE */}
         <section className="guide-section">
-          <h2>03 // IDENTIFYING_THE_TARGET</h2>
+          <h2>04 // TARGET_DOCUMENT</h2>
           <p>
-            The simulation is hosted within an isolated <code>&lt;iframe&gt;</code>. To begin your audit, 
-            locate the following boundary in the <strong>Elements</strong> tab:
+            DevTools attached to the scavenger page show the parent DOM first. Expand{' '}
+            <code>#sim-frame</code> → <code>#document</code> → <code>&lt;html&gt;</code> → <code>&lt;body&gt;</code>; the
+            simulated app lives under <code>webdevscav-simulated-root</code>. You can also right-click inside the
+            simulated viewport → <strong>Inspect</strong>, then confirm the selection sits under that iframe document
+            before you walk the tree.
           </p>
-          <div className="devtools-sim" style={{ marginTop: '24px' }}>
+          <div className="devtools-sim">
             <div className="dt-line"><span className="dt-tag">&lt;iframe</span> <span className="dt-attr">id</span>=<span className="dt-str">"sim-frame"</span> <span className="dt-tag">&gt;</span></div>
             <div className="dt-line indent-1"><span className="dt-tag">&lt;#document&gt;</span></div>
             <div className="dt-line indent-2"><span className="dt-tag">&lt;html&gt;</span></div>
@@ -63,36 +94,71 @@ export default function Instructions() {
             <div className="dt-line indent-5"><span className="dt-text">... Simulated Content ...</span></div>
             <div className="dt-line indent-4"><span className="dt-tag">&lt;/div&gt;</span></div>
           </div>
+          <ul className="inspect-steps">
+            <li>
+              With <strong>Elements</strong> focused, <strong>Cmd+F</strong> / <strong>Ctrl+F</strong> opens DOM search.
+              Start with <code>KEY_</code>, then terms lifted directly from the audit log.
+            </li>
+            <li>
+              Inspect attributes, inline <code>style</code>, HTML comments, and collapsed text nodes—higher difficulties
+              favor non-visible pockets over obvious copy.
+            </li>
+          </ul>
         </section>
 
-        {/* 04 // AUDIT TABS */}
+        {/* 05 // TABS */}
         <section className="guide-section">
-          <h2>04 // AUDIT_TECHNIQUES</h2>
+          <h2>05 // PANEL_REFERENCE</h2>
           <div className="audit-tab-guide">
             <div className="tab-card">
               <h3>ELEMENTS</h3>
-              <p>Search for <code>display: none</code> or <code>visibility: hidden</code>. Developers often "hide" debug flags or admin controls in the DOM.</p>
+              <p>
+                Beyond visible nodes, check <code>display: none</code>, <code>visibility: hidden</code>, and
+                data-bearing attributes—debug scaffolding often stays in the tree but off-screen.
+              </p>
             </div>
             <div className="tab-card">
               <h3>CONSOLE</h3>
-              <p>Monitor logs for leaked objects. Production logs often inadvertently print <code>Config</code> or <code>Session</code> metadata.</p>
+              <p>Watch for leaked objects and structured logs; <code>Config</code>-shaped dumps and session metadata appear here more often than in the DOM.</p>
             </div>
             <div className="tab-card">
               <h3>NETWORK</h3>
-              <p>Filter by <strong>Fetch/XHR</strong>. Inspect JSON responses—they often contain more data than what the UI renders.</p>
+              <p>
+                Filter <strong>Fetch/XHR</strong>; read JSON bodies and response headers. Turn on <strong>Preserve log</strong>{' '}
+                when the sim fires navigations or chained calls so responses do not vanish from the list.
+              </p>
             </div>
             <div className="tab-card">
               <h3>APPLICATION</h3>
-              <p>Audit <strong>LocalStorage</strong> and <strong>Cookies</strong> for stored JWTs, session IDs, or debug mode flags.</p>
+              <p>Review <strong>Local Storage</strong> and <strong>Cookies</strong> for session artifacts, feature flags, and tokens the renderer never prints.</p>
             </div>
           </div>
         </section>
 
-        {/* 05 // PLAYTHROUGH */}
+        {/* 06 // ADVANCED */}
         <section className="guide-section">
-          <h2>05 // OPERATIONAL_PLAYTHROUGH</h2>
+          <h2>06 // HARD_MODE_HEURISTICS</h2>
+          <dl className="pro-tips-dl">
+            <dt>Cross-surface correlation</dt>
+            <dd>
+              When the UI references a value you cannot find in markup, assume it arrived via fetch, storage, or a
+              script-held object. Walk <strong>Network</strong> → <strong>Application</strong> → <strong>Console</strong>{' '}
+              instead of re-reading the same DOM branch.
+            </dd>
+            <dt>Timed vs endless judgment</dt>
+            <dd>
+              In <strong>FASTEST_TIME</strong>, a hint that collapses minutes of blind search is usually net-positive even
+              though reading it takes seconds. In <strong>MAX_EXTRACTION</strong>, ration hints against the point penalty
+              unless you are truly stuck.
+            </dd>
+          </dl>
+        </section>
+
+        {/* 07 // PLAYTHROUGH */}
+        <section className="guide-section">
+          <h2>07 // OPERATIONAL_PLAYTHROUGH</h2>
           <p>
-            Watch the synchronized audit flow. The left panel shows the gameplay; the right panel simulates the corresponding 
+            Watch the synchronized audit flow. The left panel shows the gameplay; the right panel simulates the corresponding
             DevTools state during a successful extraction.
           </p>
           <div className="playthrough-split" style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '2px', background: 'var(--border)', border: '1px solid var(--border)', marginTop: '32px', borderRadius: '8px', overflow: 'hidden' }}>

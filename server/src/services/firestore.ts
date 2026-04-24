@@ -57,6 +57,7 @@ try {
 const sessions = new Map<string, GameSession>();
 const leaderboard: LeaderboardEntry[] = [];
 const foundKeysMap = new Map<string, Set<string>>(); // sessionId -> set of found key values
+const sessionCache = new Map<string, GameSession>(); // read-through cache for Firestore-backed sessions
 
 // ====== EXPORTED METHODS ======
 
@@ -64,6 +65,7 @@ export async function saveSession(session: GameSession): Promise<void> {
   if (db) {
     await db.collection('sessions').doc(session.id).set(session);
     await db.collection('sessions').doc(session.id).collection('state').doc('keys').set({ found: [] });
+    sessionCache.set(session.id, session);
   } else {
     sessions.set(session.id, session);
     foundKeysMap.set(session.id, new Set());
@@ -72,8 +74,13 @@ export async function saveSession(session: GameSession): Promise<void> {
 
 export async function getSession(sessionId: string): Promise<GameSession | undefined> {
   if (db) {
+    const cached = sessionCache.get(sessionId);
+    if (cached) return cached;
     const doc = await db.collection('sessions').doc(sessionId).get();
-    return doc.exists ? (doc.data() as GameSession) : undefined;
+    if (!doc.exists) return undefined;
+    const session = doc.data() as GameSession;
+    sessionCache.set(sessionId, session);
+    return session;
   }
   return sessions.get(sessionId);
 }
@@ -196,6 +203,7 @@ export async function getLeaderboard(
 export async function deleteSession(sessionId: string): Promise<void> {
   if (db) {
     await db.collection('sessions').doc(sessionId).delete();
+    sessionCache.delete(sessionId);
   } else {
     sessions.delete(sessionId);
     foundKeysMap.delete(sessionId);

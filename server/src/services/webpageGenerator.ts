@@ -3,6 +3,90 @@ import { generateContent, isGeminiConfigured } from './gemini.js';
 import { injectBridgeScript } from './bridgeInjector.js';
 import type { HiddenKey, GameSession, WebpageTheme } from '../types/index.js';
 
+const SIMULATION_START_MARKER = '<!-- ◈◈◈ WEBDEVSCAV SIMULATION START ◈◈◈ -->';
+
+/** Gemini sometimes drops this marker while keys still validate; players use it to find the simulated root in Elements. */
+function ensureSimulationStartMarker(html: string): string {
+  if (!/<body[^>]*>/i.test(html)) {
+    return html;
+  }
+  if (html.includes('WEBDEVSCAV SIMULATION START')) {
+    return html;
+  }
+  return html.replace(/<body([^>]*)>/i, `<body$1>\n  ${SIMULATION_START_MARKER}\n`);
+}
+
+function b64Utf8(s: string): string {
+  return Buffer.from(s, 'utf8').toString('base64');
+}
+
+/** Raw key or base64(key) in source (for atob()-based JS). */
+function keyPresentInGeneratedHtml(html: string, value: string): boolean {
+  if (html.includes(value)) return true;
+  const b64 = b64Utf8(value);
+  return b64.length > 0 && html.includes(b64);
+}
+
+function shuffleArray<T>(arr: T[]): T[] {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function insertAfterRandomMatch(html: string, re: RegExp, injection: string): string {
+  const matches = [...html.matchAll(re)];
+  if (matches.length === 0) return html + injection;
+  const m = matches[Math.floor(Math.random() * matches.length)];
+  const pos = m.index! + m[0].length;
+  return html.slice(0, pos) + injection + html.slice(pos);
+}
+
+function scatterPlaintextIntoLayout(layoutHtml: string, chunks: string[]): string {
+  let out = layoutHtml;
+  for (const chunk of shuffleArray(chunks)) {
+    const injection = `\n${chunk}\n`;
+    if (/<\/p>/i.test(out)) {
+      out = insertAfterRandomMatch(out, /<\/p>/g, injection);
+    } else if (/<\/section>/i.test(out)) {
+      out = insertAfterRandomMatch(out, /<\/section>/g, injection);
+    } else {
+      out += injection;
+    }
+  }
+  return out;
+}
+
+function scatterOtherLeaksIntoLayout(layoutHtml: string, chunks: string[]): string {
+  let out = layoutHtml;
+  for (const chunk of shuffleArray(chunks)) {
+    const injection = `\n${chunk}\n`;
+    if (/<\/section>/i.test(out)) {
+      out = insertAfterRandomMatch(out, /<\/section>/g, injection);
+    } else if (/<\/p>/i.test(out)) {
+      out = insertAfterRandomMatch(out, /<\/p>/g, injection);
+    } else {
+      out += injection;
+    }
+  }
+  return out;
+}
+
+/** Runtime decode in emitted JS (ASCII-safe keys only; our generators use alphanumeric-ish tokens). */
+function jsFromB64(value: string): string {
+  return `atob(${JSON.stringify(b64Utf8(value))})`;
+}
+
+const SCRIPT_DECOYS = [
+  'try{window.performance&&performance.mark&&performance.mark("app:hydrate");}catch(e){}',
+  'try{if(window.requestIdleCallback)requestIdleCallback(function(){});}catch(e){}',
+  'void function(n){return n;}({});',
+  'try{Object.freeze&&Object.freeze({});}catch(e){}',
+  'try{typeof document!=="undefined"&&document.documentElement&&document.documentElement.getAttribute("lang");}catch(e){}',
+];
+
 const THEMES: WebpageTheme[] = [
   'ecommerce', 'blog', 'portfolio', 'dashboard',
   'social', 'news', 'restaurant', 'startup',
@@ -42,13 +126,39 @@ function generateRealisticValue(location: string): string {
     case 'localstorage': return `eyJhbGciOiJIUzI1Ni_${randHex()}`;
     case 'cookie': return `sess_${randHex()}`;
     case 'session-storage': return `csrf_${randHex()}`;
-    case 'network-response': return `auth_${randHex()}`;
-    default: return randHex();
+    case 'network-response':
+    case 'network-header':
+      return `auth_${randHex()}`;
+    case 'click-network':
+      return `clk_${randHex()}`;
+    case 'click-reveal':
+      return `ui_${randHex()}`;
+    case 'console-invoke':
+      return `cmd_${randHex()}`;
+    case 'script-bundle':
+      return `bnd_${randHex()}`;
+    case 'plaintext':
+      return `REF-${randHex().toUpperCase()}`;
+    default:
+      return randHex();
   }
 }
 
 function generateKeys(count: number, difficultyLevel: string): HiddenKey[] {
-  const allLocations: { location: string; easyTask: string; mediumTask: string; hardTask: string; easyHint: string; mediumHint: string; hardHint: string; difficulty: 'easy' | 'medium' | 'hard' }[] = [
+  const allLocations: {
+    location: string;
+    easyTask: string;
+    mediumTask: string;
+    hardTask: string;
+    easyHint: string;
+    mediumHint: string;
+    hardHint: string;
+    difficulty: 'easy' | 'medium' | 'hard';
+    /** Omit from easy mode */
+    requiresMedium?: boolean;
+    /** Omit from easy and medium */
+    requiresHard?: boolean;
+  }[] = [
     { 
       location: 'html-comment', 
       easyTask: 'Find the secret in the HTML comments.',
@@ -159,25 +269,25 @@ function generateKeys(count: number, difficultyLevel: string): HiddenKey[] {
       hardHint: 'Check for values updated during page load.',
       difficulty: 'hard' 
     },
-    { 
-      location: 'network-response', 
-      easyTask: 'Check the Network tab for an API response.',
-      mediumTask: 'Intercept a background fetch leaking an auth hash.',
-      hardTask: 'Analyze a JSON payload from a mock API call to find the key.',
-      easyHint: 'Open the Network tab and look for XHR/Fetch requests.', 
-      mediumHint: 'Inspect the "Response" body of calls to /api/auth or similar.',
-      hardHint: 'Look for keys buried deep in a nested JSON object.',
-      difficulty: 'hard' 
+    {
+      location: 'network-response',
+      easyTask: 'Find a network response from something the simulated app would load (dashboard widget, availability check, live pricing strip).',
+      mediumTask: 'A believable on-page feature triggers a fetch; the key appears only in that response body.',
+      hardTask: 'Trace which UI affordance fires the request, then read the JSON or text payload for the token.',
+      easyHint: 'Reload or interact with a data-heavy part of the page (cart, live map, status ticker), then sort Network by Fetch/XHR.', 
+      mediumHint: 'Pick the request whose name matches what the visible UI just updated (inventory, quote, feed refresh).',
+      hardHint: 'Expand nested JSON in the Response tab; the value may sit beside fields the UI already shows.',
+      difficulty: 'hard'
     },
-    { 
-      location: 'network-header', 
-      easyTask: 'Check the headers of a network request.',
-      mediumTask: 'Find a custom request header in an analytics ping.',
-      hardTask: 'A secret audit key is sent in an outgoing header; intercept it.',
-      easyHint: 'Check the Network tab, click a request, then "Headers".', 
-      mediumHint: 'Look for "X-Audit-Key" or "Authorization" in Request Headers.',
-      hardHint: 'Inspect all outgoing requests for non-standard headers.',
-      difficulty: 'hard' 
+    {
+      location: 'network-header',
+      easyTask: 'Inspect request headers on a call that matches visible app behavior (checkout, export, sync).',
+      mediumTask: 'A normal-looking action sends a custom header; find it on that request\'s Headers tab.',
+      hardTask: 'Figure out which control fires the tagged request, then read the outgoing request headers.',
+      easyHint: 'Perform a plausible action (save, export, connect), then open the newest fetch in Network → Headers.', 
+      mediumHint: 'Request Headers often include vendor or integration names that match buttons you clicked.',
+      hardHint: 'Compare headers across a few rows; the unusual header usually pairs with one specific user action.',
+      difficulty: 'hard'
     },
     { 
       location: 'aria-label', 
@@ -188,11 +298,90 @@ function generateKeys(count: number, difficultyLevel: string): HiddenKey[] {
       mediumHint: 'Inspect icons and buttons for non-descriptive aria labels.',
       hardHint: 'Search for accessibility tags that contain hex strings.',
       difficulty: 'medium' 
+    },
+    {
+      location: 'plaintext',
+      easyTask: 'Find a reference code embedded in normal page text (not a labeled “secret” box).',
+      mediumTask: 'A token is woven into realistic copy—bylines, footers, SKUs, or metadata lines.',
+      hardTask: 'The key appears as plausible editorial or ops text, or is visually hidden but still plain text in the DOM.',
+      easyHint: 'Skim article body, captions, and footer fine print; look for REF- style codes.',
+      mediumHint: 'Check table cells, shipping lines, version strings, and copyright tails.',
+      hardHint: 'View page source or search the DOM: some tokens sit in visually collapsed or off-screen text nodes.',
+      difficulty: 'medium'
+    },
+    {
+      location: 'click-network',
+      easyTask: 'Use a real-looking control in the fake app (save, publish, sync cart, preview invoice), then inspect Network for the request it fired.',
+      mediumTask: 'A button or link that belongs in the layout triggers fetch; the token travels in that request only after you click.',
+      hardTask: 'Nothing leaks on load—identify which visible product control performs the sync, then read that fetch\'s URL or body.',
+      easyHint: 'Clear Network, click a primary workflow control (post, checkout step, refresh list), then inspect the new row.',
+      mediumHint: 'The request name or query should match the UI you used (draft save, catalog sync, entitlement refresh).',
+      hardHint: 'Turn off Preserve log, click once, and compare the single new entry\'s payload to the rest.',
+      difficulty: 'hard',
+      requiresMedium: true
+    },
+    {
+      location: 'click-reveal',
+      easyTask: 'Use an in-app disclosure (expand row, show details, reveal code) that fits the page theme.',
+      mediumTask: 'A control that looks like part of the product writes the token into the DOM only after interaction.',
+      hardTask: 'Find the affordance that expands or toggles copy without leaving the simulated experience.',
+      easyHint: 'Look for chevrons, “Show more”, pricing tiers, or order-detail toggles in the main content.',
+      mediumHint: 'Watch the Elements panel while expanding panels—the token may appear in a sibling span.',
+      hardHint: 'Reveals usually sit next to the control you clicked; avoid hunting random footer micro-links.',
+      difficulty: 'medium',
+      requiresMedium: true
+    },
+    {
+      location: 'console-invoke',
+      easyTask: 'Run a small function from the browser console to print the token.',
+      mediumTask: 'A diagnostic hook is registered on window; invoke it from the Console tab.',
+      hardTask: 'Recover the function name from a subtle source hint, then call it and read the output.',
+      easyHint: 'Search the page source for comments mentioning console or window.',
+      mediumHint: 'Look for window.__… or globalThis assignments in inline scripts.',
+      hardHint: 'The hint may be an HTML comment; the function returns or logs the exact key string.',
+      difficulty: 'hard',
+      requiresHard: true
+    },
+    {
+      location: 'script-bundle',
+      easyTask: 'Inspect an inline script block that resembles vendor or telemetry code.',
+      mediumTask: 'A minified-looking stub hides an encoded token—recover it from Sources / page source.',
+      hardTask: 'Parse obfuscated inline “bundle” code; the key is only present as encoded payload.',
+      easyHint: 'Open Sources (or search in View Source) for chunks, telemetry, or vendor stubs.',
+      mediumHint: 'Look for atob(…) or long string literals in secondary script tags.',
+      hardHint: 'Follow IIFEs with misleading filenames in comments; decode base64 payloads mentally or in console.',
+      difficulty: 'hard',
+      requiresHard: true
     }
   ];
 
-  const shuffled = allLocations.sort(() => 0.5 - Math.random());
-  return shuffled.slice(0, count).map((loc) => {
+  let poolCandidates = allLocations;
+  if (difficultyLevel === 'easy') {
+    poolCandidates = allLocations.filter((l) => !l.requiresMedium && !l.requiresHard);
+  } else if (difficultyLevel === 'medium') {
+    poolCandidates = allLocations.filter((l) => !l.requiresHard);
+  }
+
+  const keys: HiddenKey[] = [];
+  let previousLocation = '';
+  const usage = new Map<string, number>();
+  const pool = shuffleArray(poolCandidates);
+
+  for (let i = 0; i < count; i++) {
+    const sorted = [...pool].sort(
+      (a, b) => (usage.get(a.location) ?? 0) - (usage.get(b.location) ?? 0)
+    );
+    const minCount = usage.get(sorted[0].location) ?? 0;
+    const bucket = sorted.filter((x) => (usage.get(x.location) ?? 0) === minCount);
+    let loc = bucket[Math.floor(Math.random() * bucket.length)];
+    let tries = 0;
+    while (loc.location === previousLocation && tries < pool.length * 2) {
+      loc = pool[Math.floor(Math.random() * pool.length)];
+      tries++;
+    }
+    usage.set(loc.location, (usage.get(loc.location) ?? 0) + 1);
+    previousLocation = loc.location;
+
     let task = loc.easyTask;
     let hint = loc.easyHint;
 
@@ -204,15 +393,17 @@ function generateKeys(count: number, difficultyLevel: string): HiddenKey[] {
       hint = loc.hardHint;
     }
 
-    return {
+    keys.push({
       taskId: uuidv4(),
       task: task,
       value: generateRealisticValue(loc.location),
       location: loc.location,
       hint: hint,
       difficulty: loc.difficulty,
-    };
-  });
+    });
+  }
+
+  return keys;
 }
 
 function buildPrompt(theme: WebpageTheme, keys: HiddenKey[]): string {
@@ -230,10 +421,15 @@ function buildPrompt(theme: WebpageTheme, keys: HiddenKey[]): string {
       case 'css-content': return `${i + 1}. Use CSS content: .nav-brand::before { content: "${key.value}"; font-size: 0; }`;
       case 'script-variable': return `${i + 1}. Define JS variable: window.__INTERNAL_STATE__ = { hash: "${key.value}" };`;
       case 'cookie': return `${i + 1}. Set Cookie: document.cookie = "_auth_v2=${key.value}; max-age=3600";`;
-      case 'network-response': return `${i + 1}. Mock Fetch: In a script, fetch('/api/v1/auth').then(r => r.json()).catch(() => {}); (Make sure the key "${key.value}" is in the mock fetch logic or as a query param)`;
-      case 'network-header': return `${i + 1}. Request Header: fetch('/api/ping', { headers: { 'X-Audit-Key': '${key.value}' } });`;
+      case 'network-response': return `${i + 1}. Fire fetch() from code that clearly belongs to a visible, on-theme widget (hero stats ticker, inventory strip, “live quote” card)—not a detached script. Include the key in the response-shaped payload or query the UI implies. Use fetch(url, { cache: 'no-store' }) and for GET append '&_t=' + Date.now() so reloads still show a fresh Network entry. Example: fetch('/api/game/dummy?token=${key.value}&_t=' + Date.now(), { cache: 'no-store' }).catch(() => {});`;
+      case 'network-header': return `${i + 1}. Same rule: tie the outgoing fetch to believable UI context (export, connect partner, checkout). Request header: fetch('/api/game/dummy', { headers: { 'X-Audit-Key': '${key.value}' }, cache: 'no-store' }).catch(() => {}); Always set cache: 'no-store'. Prefer a header name that plausibly matches that action, not generic “internal diff” jargon.`;
       case 'session-storage': return `${i + 1}. Set SessionStorage: sessionStorage.setItem("temp_id", "${key.value}");`;
       case 'aria-label': return `${i + 1}. Add ARIA label: <button aria-label="Action: ${key.value}">Submit</button>`;
+      case 'plaintext': return `${i + 1}. Weave "${key.value}" into normal mid-page copy (article body, SKU line, shipping estimate, testimonial attribution, or version line)—never isolated at the top or in a labeled “secret” block. It must read as plausible customer-facing or product copy. Avoid fictitious internal-only lines (CI diff IDs, shadow row audits, made-up pipeline jargon) unless the entire page is clearly a devtools/internal portal theme.`;
+      case 'click-network': return `${i + 1}. Add a control that already makes sense in the simulated product (e.g. “Save draft”, “Publish post”, “Sync catalog”, “Refresh quote”, “Create posting”) in the correct section of the layout. That control's handler fires fetch('/api/game/dummy?...') ONLY on click—never on load. Use encodeURIComponent(atob("BASE64")) for the token, { cache: "no-store" } (double quotes inside JS), and &_cb=Date.now(). Do not bolt on a stray paragraph of ops/CI microcopy solely to host a link—the button or link must belong with the surrounding fake feature.`;
+      case 'click-reveal': return `${i + 1}. Use a disclosure pattern that matches the UI (expand pricing tier, “Show tracking #” in order detail, API key mock in a developer-settings panel). The visible label and placement must match that region. On click, write the decoded key into an adjacent span (atob in JS only). Optional class hooks (w-inline-note / inline-action) only if they match your stylesheet—no orphan footnote sentences disconnected from the app chrome.`;
+      case 'console-invoke': return `${i + 1}. Register globalThis.FN = function(){ console.info or return the key from atob("${b64Utf8(key.value)}"); } with FN a short random identifier; leave ONE subtle HTML comment naming window.FN so players can discover it. Do not print the raw key in HTML.`;
+      case 'script-bundle': return `${i + 1}. Add a second inline <script> styled like vendor/telemetry (leading comment e.g. /* chunk:vendor.ops.v2 */) with an IIFE that takes base64("${b64Utf8(key.value)}") as argument—do not print the decoded key; discovery is via reading Sources.`;
       default: return `${i + 1}. Hide the value "${key.value}" somewhere in the source.`;
     }
   }).join('\n');
@@ -264,7 +460,12 @@ ${keyInstructions}
 RULES:
 - Return ONLY the raw HTML code (no markdown fences, no chat).
 - The page must be 100% self-contained (all CSS in <style>, all JS in <script>).
-- Ensure the hidden keys are NOT visible on the rendered UI, but easily findable via Developer Tools.
+- Ensure non-plaintext hidden keys are NOT visible on the rendered UI, but easily findable via Developer Tools. Plaintext keys must appear as exact character sequences in the HTML (inside realistic copy or in visually hidden/off-screen text), never as an obvious labeled “key” callout.
+- SCRIPT_DISCIPLINE: Do NOT put every secret in one giant <script> at the bottom. Split into several small <script> blocks placed in different sections of the body (between content blocks). In JavaScript, do not paste raw key strings—use only atob("BASE64_UTF8") for any key material (compute base64 of the exact UTF-8 bytes of the key).
+- SIMULATED_UI_FIRST: The HTML is a believable single-page app or marketing surface for the theme. Any button, link, redirect, or fetch that exposes a key must be part of that surface's normal chrome (nav, editor toolbar, cart, settings, feed cards)—not an injected sentence about CI, diffing, shadow rows, internal refs, or other fake infra copy that would not appear on a public page. Generate the fake UI first; attach the minimal script or inline handler so the interaction a player would naturally try is what triggers the leak.
+- NO_SYNTHETIC_INTERNALS: Do not add standalone microcopy whose only purpose is to smuggle a control or token (e.g. “CI attaches an internal ref beside the changelog”, “shadow row drifts from pricing”). If copy sounds like employee-only pipeline jargon unrelated to the visible product story, replace it with customer- or product-facing wording while preserving DevTools discoverability.
+- INTERACTION_KEYS: For click-to-fetch or click-to-reveal patterns, wire handlers to controls that already exist in the layout for narrative reasons (primary/secondary CTAs, list row actions, modal footers). Keys must not appear until interaction. For HTML onclick handlers wrapped in single quotes, use { cache: "no-store" } with double quotes inside JavaScript—never backslash-escaped quotes inside the attribute. Prefer fetch to /api/game/dummy?... on click so the request always records. For console-invoke, expose one global function that returns or logs the key; you may leave a single subtle HTML comment naming the function. For faux vendor bundles, add a secondary inline script with a vendor-style comment header; the key may appear only as a base64 literal passed into an IIFE—do not write the decoded key into the DOM for that pattern.
+- NETWORK_AUDIT_FETCHES: Any fetch() meant to expose a key in DevTools MUST use { cache: 'no-store' }. For GET requests, append a cache-busting query such as '&_t=' + Date.now() so a full page reload still performs a new request. Prefer /api/game/dummy for harmless dummy traffic. On-load fetches should still originate from widgets the user can see (status banner, live counter), not invisible bootstrap-only noise unless the theme is explicitly a loading/telemetry demo.
 - The page must be responsive and professional.`;
 }
 
@@ -867,6 +1068,21 @@ function buildLayoutStyles(variant: FallbackLayoutVariant): string {
     .layout-fitness .plans article { border:1px solid var(--border); border-radius: 12px; padding: 12px; }
     @media (max-width: 980px){ .layout-fitness .dashboard,.layout-fitness .plans{grid-template-columns:1fr;} }`;
   }
+  if (variant === 'profile') {
+    return `${base}
+    .layout-profile .hero { display:grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: center; margin: 20px 0; }
+    .layout-profile .hero-visual img { width:100%; max-height: 440px; object-fit: cover; border-radius: 14px; border:1px solid var(--border); }
+    .layout-profile .projects { display:grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 14px; }
+    .layout-profile .projects article { border:1px solid var(--border); border-radius: 12px; overflow: hidden; background: rgba(255,255,255,.02); }
+    .layout-profile .projects article img { width:100%; height: 190px; object-fit: cover; display:block; }
+    .layout-profile .projects article h4 { padding: 10px 12px 0; }
+    .layout-profile .projects article p, .layout-profile .projects article span { padding: 0 12px 12px; display:block; }
+    .layout-profile .metrics { display:grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 10px; margin: 8px 0 18px; }
+    .layout-profile .metrics article { border:1px solid var(--border); border-radius: 10px; padding: 14px 12px; background: rgba(255,255,255,.02); }
+    .layout-profile .stack { display:flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 4px; }
+    .layout-profile .stack span { font-size: 12px; padding: 7px 14px; border-radius: 999px; border:1px solid var(--border); color: var(--text-muted); }
+    @media (max-width: 960px){ .layout-profile .hero,.layout-profile .projects,.layout-profile .metrics{grid-template-columns:1fr;} }`;
+  }
 
   return `${base}`;
 }
@@ -1002,8 +1218,61 @@ function buildLayoutBody(template: FallbackThemeTemplate, variant: FallbackLayou
       <footer class="footer"><div class="footer-grid">${footerColumns}</div><p class="copyright">&copy; 2026 ${template.title.split('—')[0]}</p></footer>
     </div>`;
   }
+  if (variant === 'profile') {
+    const brand = template.title.split('—')[0].trim();
+    const projectCards = template.feedItems
+      .map(
+        (item) =>
+          `<article><img src="https://picsum.photos/seed/${encodeURIComponent(item.title + 'pf')}/560/300" alt=""><h4>${item.title}</h4><p>${item.detail}</p><span>${item.meta}</span></article>`
+      )
+      .join('');
+    const metricCards = template.panelRows
+      .map(
+        (row) =>
+          `<article><strong style="font-size:19px;color:var(--text);display:block;">${row.value}</strong><p style="margin-top:8px;font-size:12px;color:var(--text-muted);">${row.label}</p></article>`
+      )
+      .join('');
+    const stackTags = [
+      'TypeScript',
+      'React',
+      'Node',
+      'Design systems',
+      'Accessibility',
+      'CI/CD',
+      'Vite',
+      'Storybook',
+      'PostgreSQL',
+      'Figma',
+    ];
+    const stackHtml = stackTags.map((t) => `<span>${t}</span>`).join('');
+    return `<div class="layout-profile site-shell">
+      <header class="top-nav"><div class="brand">${brand}</div><div class="links">${navLinks}</div></header>
+      <section class="hero">
+        <article>
+          <p class="section-title">Intro</p>
+          <h1>${template.title}</h1>
+          <p>${template.subtitle}</p>
+          <p style="margin-top:14px;font-size:14px;line-height:1.65;color:var(--text-muted);max-width:52ch;">I work with product, design, and platform teams to ship UIs that stay fast under load, pass accessibility audits, and remain approachable for the next engineer. Engagements usually blend architecture, implementation, and a pragmatic observability story so launches don’t surprise you in week three.</p>
+          <div style="margin-top:20px;display:flex;gap:12px;flex-wrap:wrap;">
+            <a class="btn-main" href="#">${template.ctaPrimary}</a>
+            <a class="btn-main" href="#" style="background:transparent;border:1px solid var(--border);color:var(--text);">${template.ctaSecondary}</a>
+          </div>
+        </article>
+        <div class="hero-visual"><img src="https://picsum.photos/seed/${encodeURIComponent(template.title + 'hero')}/720/520" alt="Studio workspace"></div>
+      </section>
+      <section class="metrics">${metricCards}</section>
+      <section class="block"><p class="section-title">${template.panelTitle}</p><ul class="cart">${panelRows}</ul></section>
+      <section class="block" style="margin-top:14px;"><p class="section-title">${template.feedLabel}</p><div class="projects">${projectCards}</div></section>
+      <section class="block" style="margin-top:14px;"><p class="section-title">How I work</p><div style="display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px;">${featureCards}</div></section>
+      <section class="block" style="margin-top:14px;"><p class="section-title">Stack &amp; tools</p><div class="stack">${stackHtml}</div><p style="font-size:13px;margin-top:14px;color:var(--text-muted);max-width:62ch;">Baseline above; each contract adapts to your existing platform, design tokens, and release process.</p></section>
+      <section class="block" style="margin-top:14px;"><p class="section-title">Write-ups &amp; artifacts</p><div style="display:grid; gap:10px;">${longFeed}</div></section>
+      <section class="block" style="margin-top:14px;"><p class="section-title">Timeline &amp; notes</p><ul>${longListRows}</ul></section>
+      <section class="block" style="margin-top:14px;"><p class="section-title">Delivery checklist</p><table><thead><tr><th>Phase</th><th>Milestone</th><th>Detail</th><th>Status</th></tr></thead><tbody>${longTableRows}</tbody></table></section>
+      <footer class="footer"><div class="footer-grid">${footerColumns}</div><p class="copyright">&copy; 2026 ${brand}</p></footer>
+    </div>`;
+  }
 
-  return `<div class="site-shell"><header class="top-nav"><div class="brand">${template.title}</div><div class="links">${navLinks}</div></header><section class="block"><h1>${template.title}</h1><p>${template.subtitle}</p></section><footer class="footer"><div class="footer-grid">${footerColumns}</div></footer></div>`;
+  return `<div class="site-shell"><header class="top-nav"><div class="brand">${template.title}</div><div class="links">${navLinks}</div></header><section class="hero block" style="margin:16px 0;"><p class="section-title">Overview</p><h1>${template.title}</h1><p>${template.subtitle}</p></section><section class="block"><p class="section-title">Highlights</p><div style="display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px;">${featureCards}</div></section><section class="block" style="margin-top:14px;"><p class="section-title">Activity</p><div style="display:grid; gap:10px;">${longFeed}</div></section><footer class="footer"><div class="footer-grid">${footerColumns}</div><p class="copyright">&copy; 2026</p></footer></div>`;
 }
 
 // Fallback template when Gemini is not configured
@@ -1011,32 +1280,192 @@ function generateFallbackPage(theme: WebpageTheme, keys: HiddenKey[]): string {
   const template = FALLBACK_TEMPLATES[theme] || FALLBACK_TEMPLATES.startup;
   const { colors } = template;
   const variant = THEME_LAYOUT_VARIANTS[theme] || 'profile';
+  const pick = <T,>(items: T[]): T => items[Math.floor(Math.random() * items.length)];
 
   let headContent = '';
-  let bodyContent = '';
-  let scriptContent = '';
   let cssInjections = '';
+  const domLeaksPlain: string[] = [];
+  const domLeaksOther: string[] = [];
+  const scriptFrags: string[] = [];
 
   keys.forEach((key) => {
+    const rndLs = () => pick(['v3_session', 'auth_shadow', 'client_prefetch', 'boot_cache', 'trace_hint', 'preflight_kv']);
+    const rndSs = () => pick(['temp_id', 'csrf_token', 'trace_session', 'hydration_nonce', 'svc_handshake']);
+    const rndWin = () => `_0x${Math.floor(Math.random() * 1e9)}`;
+
     switch (key.location) {
-      case 'meta-tag': headContent += `<meta name="x-debug-key" content="${key.value}">\n`; break;
-      case 'html-comment': bodyContent += `<!-- DEBUG_KEY: ${key.value} -->\n`; break;
-      case 'hidden-element': bodyContent += `<div style="display:none">${key.value}</div>\n`; break;
-      case 'css-variable': cssInjections += `:root { --f-token: "${key.value}"; }\n`; break;
-      case 'css-content': cssInjections += `.footer::after { content: "${key.value}"; font-size: 0; opacity: 0; }\n`; break;
-      case 'console-log': scriptContent += `console.debug("Internal Config Hash:", "${key.value}");\n`; break;
-      case 'localstorage': scriptContent += `localStorage.setItem("v3_session", "${key.value}");\n`; break;
-      case 'script-variable': scriptContent += `window.__INTERNAL_STATE__ = { hash: "${key.value}" };\n`; break;
-      case 'cookie': scriptContent += `document.cookie = "_auth_v2=${key.value}; path=/";\n`; break;
-      case 'session-storage': scriptContent += `sessionStorage.setItem("temp_id", "${key.value}");\n`; break;
-      case 'network-response': scriptContent += `fetch("/api/v1/auth?token=${key.value}").catch(() => {});\n`; break;
-      case 'network-header': scriptContent += `fetch("/api/ping", { headers: { "X-Audit-Key": "${key.value}" } }).catch(() => {});\n`; break;
-      case 'data-attribute': bodyContent += `<div data-internal-id="${key.value}" style="display:none"></div>\n`; break;
-      case 'aria-label': bodyContent += `<button aria-label="System: ${key.value}" style="display:none"></button>\n`; break;
+      case 'meta-tag':
+        headContent += pick([
+          `<meta name="generator" content="Static site · build ${key.value}">\n`,
+          `<meta name="twitter:data1" content="${key.value}">\n`,
+          `<meta name="product:retailer_item_id" content="${key.value}">\n`,
+        ]);
+        break;
+      case 'html-comment':
+        domLeaksOther.push(pick([
+          `<!-- build: ${key.value} -->\n`,
+          `<!-- trace:${key.value} -->\n`,
+          `<!-- sync-marker ${key.value} -->\n`,
+        ]));
+        break;
+      case 'hidden-element':
+        domLeaksOther.push(pick([
+          `<div style="display:none">${key.value}</div>\n`,
+          `<span style="visibility:hidden">${key.value}</span>\n`,
+          `<p style="position:absolute;left:-9999px;top:-9999px">${key.value}</p>\n`,
+        ]));
+        break;
+      case 'css-variable':
+        cssInjections += pick([
+          `:root { --f-token-${Math.floor(Math.random() * 1000)}: "${key.value}"; }\n`,
+          `.site-shell { --session-mark: "${key.value}"; }\n`,
+          `.top-nav { --ops-salt: "${key.value}"; }\n`,
+        ]);
+        break;
+      case 'css-content':
+        cssInjections += pick([
+          `.footer::after { content: "${key.value}"; font-size: 0; opacity: 0; }\n`,
+          `.brand::before { content: "${key.value}"; display: block; height: 0; overflow: hidden; }\n`,
+          `.section-title::after { content: "${key.value}"; font-size: 0; }\n`,
+        ]);
+        break;
+      case 'console-log':
+        scriptFrags.push(
+          pick([
+            `try{console.debug("\\u200c",${jsFromB64(key.value)});}catch(e){}`,
+            `try{console.info("\\u2060",${jsFromB64(key.value)});}catch(e){}`,
+            `try{console.log("\\u200d",${jsFromB64(key.value)});}catch(e){}`,
+          ])
+        );
+        break;
+      case 'localstorage':
+        scriptFrags.push(
+          `try{localStorage.setItem(${JSON.stringify(rndLs())},${jsFromB64(key.value)});}catch(e){}`
+        );
+        break;
+      case 'script-variable':
+        scriptFrags.push(
+          `try{window[${JSON.stringify(rndWin())}]={v:${jsFromB64(key.value)}};}catch(e){}`
+        );
+        break;
+      case 'cookie':
+        scriptFrags.push(
+          pick([
+            `try{document.cookie="_a="+encodeURIComponent(${jsFromB64(key.value)})+";path=/";}catch(e){}`,
+            `try{document.cookie="s="+encodeURIComponent(${jsFromB64(key.value)})+";path=/;max-age=3600";}catch(e){}`,
+            `try{document.cookie="m="+encodeURIComponent(${jsFromB64(key.value)})+";path=/";}catch(e){}`,
+          ])
+        );
+        break;
+      case 'session-storage':
+        scriptFrags.push(
+          `try{sessionStorage.setItem(${JSON.stringify(rndSs())},${jsFromB64(key.value)});}catch(e){}`
+        );
+        break;
+      case 'network-response':
+        scriptFrags.push(
+          pick([
+            `try{fetch("/api/v1/auth?token="+encodeURIComponent(${jsFromB64(key.value)})+"&_cb="+Date.now(),{cache:"no-store"}).catch(function(){});}catch(e){}`,
+            `try{fetch("/api/game/dummy?token="+encodeURIComponent(${jsFromB64(key.value)})+"&_cb="+Date.now(),{cache:"no-store"}).catch(function(){});}catch(e){}`,
+            `try{fetch("/api/verify?auth="+encodeURIComponent(${jsFromB64(key.value)})+"&_cb="+Date.now(),{cache:"no-store"}).catch(function(){});}catch(e){}`,
+          ])
+        );
+        break;
+      case 'network-header':
+        scriptFrags.push(
+          pick([
+            `try{fetch("/api/ping",{headers:{"X-Audit-Key":${jsFromB64(key.value)}},cache:"no-store"}).catch(function(){});}catch(e){}`,
+            `try{fetch("/api/game/dummy",{headers:{"X-Trace-Key":${jsFromB64(key.value)}},cache:"no-store"}).catch(function(){});}catch(e){}`,
+            `try{fetch("/api/health",{headers:{"Authorization":"Bearer "+${jsFromB64(key.value)}},cache:"no-store"}).catch(function(){});}catch(e){}`,
+          ])
+        );
+        break;
+      case 'click-network':
+        domLeaksOther.push(
+          pick([
+            `<p class="w-inline-note" style="margin-top:10px;">Totals can lag after you change quantities — <button type="button" class="inline-action" onclick='try{fetch("/api/game/dummy?cart_sync="+encodeURIComponent(${jsFromB64(key.value)})+"&_cb="+Date.now(),{cache:"no-store"}).catch(function(){});}catch(e){}'>refresh cart from server</button> to pull tax and shipping.</p>\n`,
+            `<p class="w-inline-note" style="margin-top:10px;">List prices update when suppliers change feeds — <button type="button" class="inline-action" onclick='try{fetch("/api/game/dummy?catalog="+encodeURIComponent(${jsFromB64(key.value)})+"&_cb="+Date.now(),{cache:"no-store"}).catch(function(){});}catch(e){}'>sync live prices</button> for this category.</p>\n`,
+            `<p class="w-inline-note" style="margin-top:10px;">Your draft is only on this device until you ship it — <button type="button" class="inline-action" onclick='try{fetch("/api/game/dummy?publish="+encodeURIComponent(${jsFromB64(key.value)})+"&_cb="+Date.now(),{cache:"no-store"}).catch(function(){});}catch(e){}'>publish now</button> to push the public version.</p>\n`,
+            `<p class="w-inline-note" style="margin-top:10px;">Availability shown here may be stale — <button type="button" class="inline-action" onclick='try{fetch("/api/game/dummy?inventory="+encodeURIComponent(${jsFromB64(key.value)})+"&_cb="+Date.now(),{cache:"no-store"}).catch(function(){});}catch(e){}'>check warehouse stock</button> before checkout.</p>\n`,
+          ])
+        );
+        break;
+      case 'click-reveal': {
+        const rid = `wds_${Math.random().toString(36).slice(2, 10)}`;
+        domLeaksOther.push(
+          pick([
+            `<p class="w-inline-note" style="margin-top:10px;">Need the reference from your email receipt? <button type="button" class="inline-action" aria-label="Show order reference" onclick='try{var e=document.getElementById("${rid}");if(e)e.textContent=${jsFromB64(key.value)};}catch(e){}'>Show order reference</button> <span id="${rid}" class="mono" style="display:inline-block;min-width:6ch;vertical-align:baseline;margin-left:4px"></span> — have it ready for support.</p>\n`,
+            `<p class="w-inline-note" style="margin-top:10px;">A bundle discount was applied at checkout — <button type="button" class="inline-action" aria-label="Show promo code" onclick='try{var e=document.getElementById("${rid}");if(e)e.textContent=${jsFromB64(key.value)};}catch(e){}'>show applied code</button> <span id="${rid}" class="mono" style="display:inline-block;min-width:6ch;vertical-align:baseline;margin-left:4px"></span> appears next to your subtotal.</p>\n`,
+            `<p class="w-inline-note" style="margin-top:10px;">Tracking link not visible yet? <button type="button" class="inline-action" aria-label="Reveal shipment ID" onclick='try{var e=document.getElementById("${rid}");if(e)e.textContent=${jsFromB64(key.value)};}catch(e){}'>reveal shipment ID</button> <span id="${rid}" class="mono" style="display:inline-block;min-width:6ch;vertical-align:baseline;margin-left:4px"></span> once the carrier scans the label.</p>\n`,
+          ])
+        );
+        break;
+      }
+      case 'console-invoke': {
+        const fn = `__wds_${Math.random().toString(36).slice(2, 10)}`;
+        domLeaksOther.push(
+          `<!-- checkout helper: window.${fn}() in console returns the promo / order reference string -->\n`
+        );
+        scriptFrags.push(
+          `try{globalThis[${JSON.stringify(fn)}]=function(){var k=${jsFromB64(key.value)};console.info(k);return k;};}catch(e){}`
+        );
+        break;
+      }
+      case 'script-bundle':
+        scriptFrags.push(
+          `try{/* chunk:vendor.ops.v2 */void function(H){var u=typeof H==='string'?atob(H):'';void(u);}(${JSON.stringify(b64Utf8(key.value))});}catch(e){}`
+        );
+        break;
+      case 'data-attribute':
+        domLeaksOther.push(pick([
+          `<div data-inventory-sku="${key.value}" style="display:none"></div>\n`,
+          `<section data-product-ref="${key.value}" hidden></section>\n`,
+          `<article data-listing-id="${key.value}" style="position:absolute;left:-9999px;"></article>\n`,
+        ]));
+        break;
+      case 'aria-label':
+        domLeaksOther.push(pick([
+          `<button type="button" aria-label="Dismiss: ${key.value}" tabindex="-1" style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none"></button>\n`,
+          `<span role="presentation" aria-label="${key.value}" style="position:absolute;clip:rect(0,0,0,0)"></span>\n`,
+          `<a href="#" aria-label="Continue ${key.value}" style="position:absolute;left:-10000px">skip</a>\n`,
+        ]));
+        break;
+      case 'plaintext':
+        domLeaksPlain.push(pick([
+          `<p style="font-size:13px;color:var(--text-muted)">Order confirmation: save reference <span class="mono">${key.value}</span> for returns and warranty.</p>\n`,
+          `<p style="font-size:13px;color:var(--text-muted)">This listing ships with manufacturer ref <span class="mono">${key.value}</span> printed on the carton label.</p>\n`,
+          `<p style="font-size:13px;color:var(--text-muted)">Support may ask for ticket <span class="mono">${key.value}</span> — include it in your reply.</p>\n`,
+          `<p style="font-size:13px;color:var(--text-muted)">Enterprise quote revision <span class="mono">${key.value}</span> replaces the February catalog for this SKU.</p>\n`,
+          `<p style="font-size:13px;color:var(--text-muted)">Member ID <span class="mono">${key.value}</span> — renews on your billing date unless you cancel.</p>\n`,
+          `<p style="font-size:13px;color:var(--text-muted)">Shipment manifest line <span class="mono">${key.value}</span>; carrier scanned at sort facility, no holds.</p>\n`,
+          `<li style="font-size:13px;color:var(--text-muted)">Line item SKU trace <span class="mono">${key.value}</span> — matches the packing slip in the box.</li>\n`,
+          `<p class="testimonial-cite" style="font-size:13px;color:var(--text-muted)">“We went live last quarter — rollout ref <span class="mono">${key.value}</span> if your team wants the same playbook.”</p>\n`,
+          `<p style="font-size:13px;color:var(--text-muted)">Release notes: patch <span class="mono">${key.value}</span> is live for all regions as of this morning.</p>\n`,
+          `<span class="sr-only">${key.value}</span>\n`,
+        ]));
+        break;
     }
   });
+
   const layoutStyles = buildLayoutStyles(variant);
-  const layoutBody = buildLayoutBody(template, variant);
+  let layoutHtml = buildLayoutBody(template, variant);
+  layoutHtml = scatterPlaintextIntoLayout(layoutHtml, domLeaksPlain);
+  layoutHtml = scatterOtherLeaksIntoLayout(layoutHtml, domLeaksOther);
+
+  const mergedFrags = shuffleArray([...scriptFrags]);
+  const withDecoys: string[] = [];
+  for (const frag of mergedFrags) {
+    if (Math.random() < 0.4) {
+      withDecoys.push(SCRIPT_DECOYS[Math.floor(Math.random() * SCRIPT_DECOYS.length)]);
+    }
+    withDecoys.push(frag);
+  }
+  for (let d = 0; d < 3; d++) {
+    withDecoys.push(SCRIPT_DECOYS[Math.floor(Math.random() * SCRIPT_DECOYS.length)]);
+  }
+  const scriptTagsHtml = shuffleArray(withDecoys)
+    .map((code) => `  <script>${code}</script>`)
+    .join('\n');
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -1089,6 +1518,11 @@ function generateFallbackPage(theme: WebpageTheme, keys: HiddenKey[]): string {
     .footer-grid a { display:block; margin-bottom: 7px; color: var(--text-muted); font-size: 13px; }
     .footer-grid a:hover { color: var(--text); }
     .copyright { border-top: 1px solid rgba(255,255,255,0.08); padding-top: 16px; font-size: 12px; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.92em; letter-spacing: 0.03em; }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+    .w-inline-note { font-size: 12px; color: var(--text-muted); line-height: 1.55; display: inline; }
+    .w-inline-note .inline-action { font: inherit; color: color-mix(in oklab, var(--accent) 72%, var(--text-muted) 28%); background: transparent; border: 0; padding: 0; margin: 0; cursor: pointer; text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+    .w-inline-note .inline-action:hover { color: var(--accent); }
     @media (max-width: 980px) { .footer-grid { grid-template-columns: 1fr; } }
     ${layoutStyles}
   </style>
@@ -1096,16 +1530,9 @@ function generateFallbackPage(theme: WebpageTheme, keys: HiddenKey[]): string {
 <body>
   <!-- ◈◈◈ WEBDEVSCAV SIMULATION START ◈◈◈ -->
   <div id="webdevscav-simulated-root">
-  ${bodyContent}
-  ${layoutBody}
+  ${layoutHtml}
 
-  <script>
-    (function() {
-      ${scriptContent}
-      console.info("[System] Fallback template loaded for theme: ${theme} | layout: ${variant}");
-      console.info("[System] Security Audit in progress...");
-    })();
-  </script>
+${scriptTagsHtml}
   </div>
 </body>
 </html>`;
@@ -1150,8 +1577,8 @@ export async function generateWebpage(
         .replace(/\n?```$/i, '')
         .trim();
 
-      // Validate that all keys are present in the generated HTML
-      const missingKeys = keys.filter((k) => !html.includes(k.value));
+      // Validate that all keys are present (literal or base64 for atob()-style JS)
+      const missingKeys = keys.filter((k) => !keyPresentInGeneratedHtml(html, k.value));
       if (missingKeys.length > 0) {
         console.warn(`[WebpageGenerator] ${missingKeys.length} keys missing from Gemini output, using fallback`);
         html = generateFallbackPage(theme, keys);
@@ -1170,6 +1597,8 @@ export async function generateWebpage(
     console.log('[WebpageGenerator] Gemini disabled or not configured, using fallback template');
     html = generateFallbackPage(theme, keys);
   }
+
+  html = ensureSimulationStartMarker(html);
 
   // Inject the bridge script for DevTools communication
   html = injectBridgeScript(html);

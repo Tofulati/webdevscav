@@ -7,6 +7,8 @@ const router = Router();
  * Dummy endpoint used to simulate API requests so players can find keys in the Network tab
  */
 router.get('/dummy', (req, res) => {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+    res.setHeader('Pragma', 'no-cache');
     res.json({
         verified: true,
         token: req.query.token || 'MISSING_TOKEN',
@@ -68,15 +70,18 @@ router.post('/validate', async (req, res) => {
             res.json(response);
             return;
         }
-        const isNew = await markKeyFound(gameId, matchedKey.value);
-        const updatedFound = await getFoundKeys(gameId);
+        const alreadyFound = foundKeys.has(matchedKey.value);
+        if (!alreadyFound) {
+            await markKeyFound(gameId, matchedKey.value);
+        }
+        const keysFound = foundKeys.size + (alreadyFound ? 0 : 1);
         const response = {
             correct: true,
             taskId: matchedKey.taskId,
-            keysFound: updatedFound.size,
+            keysFound,
             totalKeys: session.totalKeys,
-            score: calculateScore(updatedFound.size, session.totalKeys, 0, 0, session.mode),
-            alreadyFound: !isNew,
+            score: calculateScore(keysFound, session.totalKeys, 0, 0, session.mode),
+            alreadyFound,
         };
         res.json(response);
     }
@@ -121,6 +126,34 @@ router.post('/hint', async (req, res) => {
         console.error('[Game] Hint error:', err);
         res.status(500).json({ error: 'Failed to get hint' });
     }
+});
+/**
+ * GET /api/game/restore/:id
+ * Re-fetch session HTML and task progress (for page reload). gameId acts as the secret.
+ */
+router.get('/restore/:id', async (req, res) => {
+    const session = await getSession(req.params.id);
+    if (!session) {
+        res.status(404).json({ error: 'Game not found' });
+        return;
+    }
+    const foundKeys = await getFoundKeys(session.id);
+    const response = {
+        gameId: session.id,
+        html: session.html,
+        totalKeys: session.totalKeys,
+        timeLimit: session.timeLimit,
+        theme: session.theme,
+        mode: session.mode,
+        difficulty: session.difficulty,
+        keysFound: foundKeys.size,
+        tasks: session.keys.map((k) => ({
+            id: k.taskId,
+            description: k.task,
+            completed: foundKeys.has(k.value),
+        })),
+    };
+    res.json(response);
 });
 /**
  * GET /api/game/state/:id

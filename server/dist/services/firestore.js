@@ -48,11 +48,13 @@ catch (error) {
 const sessions = new Map();
 const leaderboard = [];
 const foundKeysMap = new Map(); // sessionId -> set of found key values
+const sessionCache = new Map(); // read-through cache for Firestore-backed sessions
 // ====== EXPORTED METHODS ======
 export async function saveSession(session) {
     if (db) {
         await db.collection('sessions').doc(session.id).set(session);
         await db.collection('sessions').doc(session.id).collection('state').doc('keys').set({ found: [] });
+        sessionCache.set(session.id, session);
     }
     else {
         sessions.set(session.id, session);
@@ -61,8 +63,15 @@ export async function saveSession(session) {
 }
 export async function getSession(sessionId) {
     if (db) {
+        const cached = sessionCache.get(sessionId);
+        if (cached)
+            return cached;
         const doc = await db.collection('sessions').doc(sessionId).get();
-        return doc.exists ? doc.data() : undefined;
+        if (!doc.exists)
+            return undefined;
+        const session = doc.data();
+        sessionCache.set(sessionId, session);
+        return session;
     }
     return sessions.get(sessionId);
 }
@@ -183,6 +192,7 @@ export async function getLeaderboard(limit = 50, period, mode, difficulty) {
 export async function deleteSession(sessionId) {
     if (db) {
         await db.collection('sessions').doc(sessionId).delete();
+        sessionCache.delete(sessionId);
     }
     else {
         sessions.delete(sessionId);

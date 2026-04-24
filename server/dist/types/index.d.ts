@@ -29,6 +29,16 @@ export interface GameStartResponse {
         description: string;
     }[];
 }
+/** Full client rebuild after reload (same shape as start + sync fields). */
+export interface GameRestoreResponse extends GameStartResponse {
+    difficulty: string;
+    tasks: {
+        id: string;
+        description: string;
+        completed: boolean;
+    }[];
+    keysFound: number;
+}
 export interface ValidateRequest {
     gameId: string;
     value: string;

@@ -6,9 +6,11 @@ interface ScoreModuleProps {
   onSubmitKey: (key: string) => Promise<any>;
   onHint: (taskId: string) => void;
   onEnd: () => void;
+  /** Pre-run countdown: no submissions until the simulated page loads */
+  interactionLocked?: boolean;
 }
 
-export default function ScoreModule({ state, onSubmitKey, onHint, onEnd }: ScoreModuleProps) {
+export default function ScoreModule({ state, onSubmitKey, onHint, onEnd, interactionLocked }: ScoreModuleProps) {
   const [inputValue, setInputValue] = useState('');
   const [showTasks, setShowTasks] = useState(false);
   const [feedback, setFeedback] = useState<'correct' | 'incorrect' | null>(null);
@@ -28,8 +30,10 @@ export default function ScoreModule({ state, onSubmitKey, onHint, onEnd }: Score
     setTimeout(() => setFeedback(null), 600);
   };
 
+  const locked = !!interactionLocked;
+
   return (
-    <div className="score-module">
+    <div className={`score-module${locked ? ' score-module--locked' : ''}`}>
       <div className="score-stat found">
         <span className="label">EXPOSED</span>
         <span className="value">{state.keysFound}{state.mode === 'fastest' ? ` / ${state.totalKeys}` : ''}</span>
@@ -49,6 +53,7 @@ export default function ScoreModule({ state, onSubmitKey, onHint, onEnd }: Score
         <button 
           className="btn btn-secondary btn-small" 
           onClick={() => setShowTasks(!showTasks)}
+          disabled={locked}
           style={{ borderRight: 'none', borderRadius: 'var(--radius-xs) 0 0 var(--radius-xs)' }}
         >
           {showTasks ? 'CLOSE_LOG' : 'AUDIT_TASKS'} ({state.keysFound}{state.mode === 'fastest' ? `/${state.totalKeys}` : ''})
@@ -58,10 +63,11 @@ export default function ScoreModule({ state, onSubmitKey, onHint, onEnd }: Score
           className={`score-input ${feedback === 'correct' ? 'correct' : feedback === 'incorrect' ? 'incorrect' : ''}`}
           placeholder="ENTER_KEY_VALUE..."
           value={inputValue}
+          disabled={locked}
           onChange={(e) => setInputValue(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
+          onKeyDown={(e) => !locked && e.key === 'Enter' && handleSubmit()}
         />
-        <button className="score-submit-btn" onClick={handleSubmit}>
+        <button className="score-submit-btn" onClick={handleSubmit} disabled={locked}>
           SUBMIT
         </button>
       </div>
@@ -94,6 +100,7 @@ export default function ScoreModule({ state, onSubmitKey, onHint, onEnd }: Score
                     <button 
                       className="btn btn-secondary btn-small" 
                       onClick={() => onHint(task.id)}
+                      disabled={locked}
                       style={{ marginTop: '12px', fontSize: '10px' }}
                     >
                       REQUEST_HINT [-25]

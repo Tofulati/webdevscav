@@ -10,6 +10,12 @@ export async function startGame(difficulty: string = 'medium', mode: string = 'f
   return res.json();
 }
 
+export async function restoreGame(gameId: string) {
+  const res = await fetch(`${API_BASE}/game/restore/${encodeURIComponent(gameId)}`);
+  if (!res.ok) throw new Error('Failed to restore game');
+  return res.json();
+}
+
 export async function validateKey(gameId: string, value: string) {
   const res = await fetch(`${API_BASE}/game/validate`, {
     method: 'POST',

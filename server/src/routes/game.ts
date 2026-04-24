@@ -3,7 +3,7 @@ import { generateWebpage } from '../services/webpageGenerator.js';
 import {
   saveSession, getSession, markKeyFound, getFoundKeys
 } from '../services/firestore.js';
-import type { GameStartResponse, ValidateResponse } from '../types/index.js';
+import type { GameStartResponse, GameRestoreResponse, ValidateResponse } from '../types/index.js';
 
 const router = Router();
 
@@ -12,6 +12,8 @@ const router = Router();
  * Dummy endpoint used to simulate API requests so players can find keys in the Network tab
  */
 router.get('/dummy', (req: Request, res: Response) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+  res.setHeader('Pragma', 'no-cache');
   res.json({
     verified: true,
     token: req.query.token || 'MISSING_TOKEN',
@@ -83,16 +85,19 @@ router.post('/validate', async (req: Request, res: Response) => {
       return;
     }
 
-    const isNew = await markKeyFound(gameId, matchedKey.value);
-    const updatedFound = await getFoundKeys(gameId);
+    const alreadyFound = foundKeys.has(matchedKey.value);
+    if (!alreadyFound) {
+      await markKeyFound(gameId, matchedKey.value);
+    }
+    const keysFound = foundKeys.size + (alreadyFound ? 0 : 1);
 
     const response: ValidateResponse = {
       correct: true,
       taskId: matchedKey.taskId,
-      keysFound: updatedFound.size,
+      keysFound,
       totalKeys: session.totalKeys,
-      score: calculateScore(updatedFound.size, session.totalKeys, 0, 0, session.mode),
-      alreadyFound: !isNew,
+      score: calculateScore(keysFound, session.totalKeys, 0, 0, session.mode),
+      alreadyFound,
     };
 
     res.json(response);
@@ -142,6 +147,37 @@ router.post('/hint', async (req: Request, res: Response) => {
     console.error('[Game] Hint error:', err);
     res.status(500).json({ error: 'Failed to get hint' });
   }
+});
+
+/**
+ * GET /api/game/restore/:id
+ * Re-fetch session HTML and task progress (for page reload). gameId acts as the secret.
+ */
+router.get('/restore/:id', async (req: Request, res: Response) => {
+  const session = await getSession(req.params.id as string);
+  if (!session) {
+    res.status(404).json({ error: 'Game not found' });
+    return;
+  }
+
+  const foundKeys = await getFoundKeys(session.id);
+  const response: GameRestoreResponse = {
+    gameId: session.id,
+    html: session.html,
+    totalKeys: session.totalKeys,
+    timeLimit: session.timeLimit,
+    theme: session.theme,
+    mode: session.mode,
+    difficulty: session.difficulty,
+    keysFound: foundKeys.size,
+    tasks: session.keys.map((k) => ({
+      id: k.taskId,
+      description: k.task,
+      completed: foundKeys.has(k.value),
+    })),
+  };
+
+  res.json(response);
 });
 
 /**

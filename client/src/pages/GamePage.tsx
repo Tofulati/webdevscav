@@ -5,6 +5,8 @@ import { submitScore } from '../lib/api';
 import SimulatedBrowser from '../components/game/SimulatedBrowser';
 import ScoreModule from '../components/game/ScoreModule';
 
+const PRESTART_COUNTDOWN_SEC = 5;
+
 export default function GamePage() {
   const game = useGame();
   const location = useLocation();
@@ -44,6 +46,27 @@ export default function GamePage() {
 
   const [selectedDifficulty, setSelectedDifficulty] = useState<string | null>(null);
   const [playerMode, setPlayerMode] = useState<'single' | 'multiplayer'>('single');
+  const [armingSecondsLeft, setArmingSecondsLeft] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (game.state.status !== 'arming') {
+      setArmingSecondsLeft(null);
+      return;
+    }
+    let remaining = PRESTART_COUNTDOWN_SEC;
+    setArmingSecondsLeft(remaining);
+    const id = window.setInterval(() => {
+      remaining -= 1;
+      if (remaining <= 0) {
+        window.clearInterval(id);
+        setArmingSecondsLeft(null);
+        game.beginPlay();
+      } else {
+        setArmingSecondsLeft(remaining);
+      }
+    }, 1000);
+    return () => window.clearInterval(id);
+  }, [game.state.status, game.beginPlay]);
 
   const handleStartGame = () => {
     if (selectedDifficulty) {
@@ -59,7 +82,7 @@ export default function GamePage() {
           <div className="hero-tag">RUN_INITIALIZATION</div>
           <h2>SELECT_AUDIT_MODE</h2>
           
-          <div className="mode-selection" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1px', background: 'var(--border)', border: '1px solid var(--border)', marginBottom: '40px' }}>
+          <div className="mode-selection" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1px', background: 'var(--border)', border: '1px solid var(--border)' }}>
             <button 
               className={`mode-select-btn ${game.state.mode === 'fastest' ? 'active' : ''}`}
               onClick={() => game.setState(prev => ({ ...prev, mode: 'fastest' }))}
@@ -80,7 +103,7 @@ export default function GamePage() {
 
           <h2>SELECT_RUN_TYPE</h2>
           <p>Multiplayer is coming soon. Use single player for now.</p>
-          <div className="mode-selection" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1px', background: 'var(--border)', border: '1px solid var(--border)', marginBottom: '40px' }}>
+          <div className="mode-selection" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1px', background: 'var(--border)', border: '1px solid var(--border)' }}>
             <button
               className={`mode-select-btn ${playerMode === 'single' ? 'active' : ''}`}
               onClick={() => setPlayerMode('single')}
@@ -139,7 +162,7 @@ export default function GamePage() {
             ))}
           </div>
 
-          <div style={{ marginTop: '40px' }}>
+          <div className="difficulty-select-actions">
             <button 
               className="btn btn-primary" 
               onClick={handleStartGame} 
@@ -151,7 +174,7 @@ export default function GamePage() {
           </div>
 
           <div className="devtools-warning">
-            <div className="warning-title" style={{color: 'red'}}>REQUIRED_CONFIGURATION //</div>
+            <div className="warning-title warning-title--urgent">REQUIRED_CONFIGURATION //</div>
             <p>
               Open your browser's Developer Tools (<strong>F12</strong> or <strong>Cmd+Opt+I</strong>). 
               For the optimal experience, <strong>dock DevTools to the bottom</strong> of the window. 
@@ -179,15 +202,55 @@ export default function GamePage() {
   // Game complete overlay
   const showComplete = game.state.status === 'completed';
 
+  const isArming = game.state.status === 'arming';
+  const simulatedHtml =
+    isArming ? '' : (game.state.html || '');
+
+  const handleEndOrAbort = () => {
+    if (game.state.status === 'arming') game.reset();
+    else game.endGame();
+  };
+
   return (
     <div className="game-container">
       {/* Score Module */}
-      <ScoreModule state={game.state} onSubmitKey={game.submitKey} onHint={handleHint} onEnd={game.endGame} />
+      <ScoreModule
+        state={game.state}
+        onSubmitKey={game.submitKey}
+        onHint={handleHint}
+        onEnd={handleEndOrAbort}
+        interactionLocked={isArming}
+      />
 
       {/* Simulated Browser */}
       <div className="game-top">
-        <SimulatedBrowser html={game.state.html || ''} iframeRef={iframeRef} theme={game.state.theme} />
+        <SimulatedBrowser html={simulatedHtml} iframeRef={iframeRef} theme={game.state.theme} />
       </div>
+
+      {isArming && (
+        <div className="pre-start-overlay" role="dialog" aria-live="polite" aria-label="Pre-run checklist">
+          <div className="pre-start-card">
+            <div className="hero-tag">INSTRUMENTATION // PRE_FLIGHT</div>
+            <h2 className="pre-start-title">OPEN_DEVTOOLS_FIRST</h2>
+            <p className="pre-start-body">
+              Open Developer Tools <strong>now</strong> (F12 or Cmd+Opt+I) before the timer hits zero.
+              If you open them <em>after</em> the simulated page loads, the browser may not retain
+              everything that ran at startup—clues can look like they vanished.
+            </p>
+            <p className="pre-start-body" style={{ color: 'red' }}>
+              Hint: Start looking for <strong>WEBDEVSCAV SIMULATION START</strong> in the body.
+            </p>
+            <p className="pre-start-body pre-start-hint">
+              Docking DevTools to the bottom (if that works for you) usually makes the page easier to
+              inspect alongside the tools.
+            </p>
+            <div className="pre-start-count" aria-hidden="true">
+              {armingSecondsLeft ?? PRESTART_COUNTDOWN_SEC}
+            </div>
+            <p className="pre-start-foot">SIMULATION_LOADS_WHEN_THIS_HITS_ZERO</p>
+          </div>
+        </div>
+      )}
 
       {/* Toast */}
       {game.toast && <div className={`toast ${game.toast.type}`}>{game.toast.message}</div>}

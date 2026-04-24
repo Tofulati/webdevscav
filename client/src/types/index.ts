@@ -15,6 +15,12 @@ export interface GameStartResponse {
   tasks: { id: string; description: string }[];
 }
 
+export interface GameRestoreResponse extends GameStartResponse {
+  difficulty: string;
+  tasks: { id: string; description: string; completed: boolean }[];
+  keysFound: number;
+}
+
 export interface ValidateResponse {
   correct: boolean;
   taskId?: string;
@@ -81,7 +87,7 @@ export interface StorageData {
 }
 
 export interface GameState {
-  status: 'idle' | 'loading' | 'playing' | 'completed';
+  status: 'idle' | 'loading' | 'arming' | 'playing' | 'completed';
   gameId: string | null;
   html: string | null;
   totalKeys: number;
