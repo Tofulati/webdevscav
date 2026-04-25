@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Navbar from './components/layout/Navbar';
+import { SmallScreenWarning } from './components/layout/SmallScreenWarning';
 import { Footer } from './components/layout/Footer';
 import LandingPage from './pages/LandingPage';
 import Instructions from './pages/Instructions';
@@ -13,6 +14,7 @@ export default function App() {
       <Analytics />
       <div className="app-layout">
         <Navbar />
+        <SmallScreenWarning />
 
         <main className="app-content">
           <Routes>
